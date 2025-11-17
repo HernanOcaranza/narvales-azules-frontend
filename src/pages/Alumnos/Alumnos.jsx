@@ -79,7 +79,7 @@ function Alumnos() {
           onChange={(e) => setSearchText(e.target.value)}
         />
         <Button type="primary" icon={<PlusOutlined />}>
-          Nuevo Alumno
+          Nuevo CATEGORIA
         </Button>
       </div>
       <Table
