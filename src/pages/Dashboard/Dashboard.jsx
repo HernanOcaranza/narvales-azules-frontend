@@ -1,11 +1,11 @@
 import React from 'react';
-import { Row, Col, Card, Statistic } from 'antd';
+import { Grid, Card, CardContent, Typography, Box } from '@mui/material';
 import {
-  UserOutlined,
-  CreditCardOutlined,
-  DollarOutlined,
-  BookOutlined,
-} from '@ant-design/icons';
+  People as PeopleIcon,
+  CreditCard as CreditCardIcon,
+  AttachMoney as AttachMoneyIcon,
+  Book as BookIcon,
+} from '@mui/icons-material';
 
 function Dashboard() {
   // TODO: Obtener datos reales de la API
@@ -16,48 +16,76 @@ function Dashboard() {
     clasesHoy: 0,
   };
 
+  const statCards = [
+    {
+      title: 'Total Alumnos',
+      value: stats.totalAlumnos,
+      icon: <PeopleIcon sx={{ fontSize: 40 }} />,
+      color: '#1976d2',
+    },
+    {
+      title: 'Membresías Activas',
+      value: stats.totalMembresias,
+      icon: <CreditCardIcon sx={{ fontSize: 40 }} />,
+      color: '#2e7d32',
+    },
+    {
+      title: 'Pagos Pendientes',
+      value: stats.pagosPendientes,
+      icon: <AttachMoneyIcon sx={{ fontSize: 40 }} />,
+      color: '#ed6c02',
+    },
+    {
+      title: 'Clases Hoy',
+      value: stats.clasesHoy,
+      icon: <BookIcon sx={{ fontSize: 40 }} />,
+      color: '#9c27b0',
+    },
+  ];
+
   return (
-    <div>
-      <h2 style={{ marginBottom: 24 }}>Dashboard</h2>
-      <Row gutter={[16, 16]}>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
-            <Statistic
-              title="Total Alumnos"
-              value={stats.totalAlumnos}
-              prefix={<UserOutlined />}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
-            <Statistic
-              title="Membresías Activas"
-              value={stats.totalMembresias}
-              prefix={<CreditCardOutlined />}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
-            <Statistic
-              title="Pagos Pendientes"
-              value={stats.pagosPendientes}
-              prefix={<DollarOutlined />}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
-            <Statistic
-              title="Clases Hoy"
-              value={stats.clasesHoy}
-              prefix={<BookOutlined />}
-            />
-          </Card>
-        </Col>
-      </Row>
-    </div>
+    <Box>
+      <Typography variant="h4" component="h2" gutterBottom sx={{ mb: 3 }}>
+        Dashboard
+      </Typography>
+      <Grid container spacing={2}>
+        {statCards.map((stat, index) => (
+          <Grid item xs={12} sm={6} md={3} key={index}>
+            <Card
+              sx={{
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                transition: 'transform 0.2s, box-shadow 0.2s',
+                '&:hover': {
+                  transform: 'translateY(-4px)',
+                  boxShadow: 4,
+                },
+              }}
+            >
+              <CardContent>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    mb: 2,
+                  }}
+                >
+                  <Box sx={{ color: stat.color }}>{stat.icon}</Box>
+                </Box>
+                <Typography variant="h4" component="div" fontWeight="bold">
+                  {stat.value}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                  {stat.title}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
+    </Box>
   );
 }
 
