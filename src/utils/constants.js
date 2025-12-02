@@ -17,6 +17,8 @@ export const ROUTES = {
   CONFIGURACION_CATEGORIAS: '/configuracion/categorias',
   CONFIGURACION_DISCIPLINAS: '/configuracion/disciplinas',
   CONFIGURACION_CONDICIONES: '/configuracion/condiciones',
+  CONFIGURACION_TIPO_MEMBRESIAS: '/configuracion/tipo-membresias',
+  CONFIGURACION_PRECIO_MEMBRESIAS: '/configuracion/precio-membresias',
 };
 
 // Estados comunes

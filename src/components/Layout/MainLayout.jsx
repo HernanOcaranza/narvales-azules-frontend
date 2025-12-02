@@ -31,6 +31,8 @@ import {
   Sports as SportsIcon,
   MedicalServices as MedicalServicesIcon,
   Logout as LogoutIcon,
+  CardMembership as CardMembershipIcon,
+  PriceCheck as PriceCheckIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ROUTES } from '../../utils/constants';
@@ -91,6 +93,16 @@ const configuracionSubItems = [
     key: ROUTES.CONFIGURACION_CONDICIONES,
     icon: <MedicalServicesIcon />,
     label: 'Condiciones',
+  },
+  {
+    key: ROUTES.CONFIGURACION_TIPO_MEMBRESIAS,
+    icon: <CardMembershipIcon />,
+    label: 'Tipos de Membresía',
+  },
+  {
+    key: ROUTES.CONFIGURACION_PRECIO_MEMBRESIAS,
+    icon: <PriceCheckIcon />,
+    label: 'Precios de Membresía',
   },
 ];
 

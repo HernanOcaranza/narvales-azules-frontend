@@ -16,6 +16,8 @@ import Empleados from './pages/Empleados/Empleados';
 import Categorias from './pages/Configuracion/Categorias';
 import Disciplinas from './pages/Configuracion/Disciplinas';
 import Condiciones from './pages/Configuracion/Condiciones';
+import TipoMembresias from './pages/Configuracion/TipoMembresias';
+import PrecioMembresias from './pages/Configuracion/PrecioMembresias';
 import { ROUTES } from './utils/constants';
 import './App.css';
 
@@ -85,6 +87,8 @@ function App() {
                       <Route path={ROUTES.CONFIGURACION_CATEGORIAS} element={<Categorias />} />
                       <Route path={ROUTES.CONFIGURACION_DISCIPLINAS} element={<Disciplinas />} />
                       <Route path={ROUTES.CONFIGURACION_CONDICIONES} element={<Condiciones />} />
+                      <Route path={ROUTES.CONFIGURACION_TIPO_MEMBRESIAS} element={<TipoMembresias />} />
+                      <Route path={ROUTES.CONFIGURACION_PRECIO_MEMBRESIAS} element={<PrecioMembresias />} />
                       <Route path="*" element={<Navigate to={ROUTES.DASHBOARD} replace />} />
                     </Routes>
                   </MainLayout>

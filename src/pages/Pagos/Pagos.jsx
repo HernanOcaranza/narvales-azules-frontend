@@ -2,62 +2,128 @@ import React from 'react';
 import {
   Box,
   Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  IconButton,
   CircularProgress,
   Stack,
   Typography,
-  Chip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  Alert,
+  Snackbar,
   useMediaQuery,
   useTheme,
-  Card,
-  CardContent,
 } from '@mui/material';
-import {
-  Add as AddIcon,
-  Visibility as VisibilityIcon,
-} from '@mui/icons-material';
-// import api from '../../services/api';
-import { formatDate, formatCurrency } from '../../utils/helpers';
+import { Add as AddIcon } from '@mui/icons-material';
+import { usePagos } from '../../hooks/usePagos';
+import PagosTable from '../../components/pagos/PagosTable';
+import PagoForm from '../../components/pagos/PagoForm';
+import PagoDetailsModal from '../../components/pagos/PagoDetailsModal';
+import PagosFilters from '../../components/pagos/PagosFilters';
+import ConfirmDeleteDialog from '../../components/Dialogs/ConfirmDeleteDialog';
 
 function Pagos() {
-  const [pagos, setPagos] = React.useState([]);
-  const [loading, setLoading] = React.useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
+  const { pagos, loading, fetchPagos, createPago, updatePago, deletePago, fetchPagoById } = usePagos();
+
+  const [filters, setFilters] = React.useState({
+    tipo: null,
+    estado: null,
+    fechaDesde: null,
+    fechaHasta: null,
+    observaciones: null,
+  });
+
+  const [openModal, setOpenModal] = React.useState(false);
+  const [editingItem, setEditingItem] = React.useState(null);
+  const [detailDialog, setDetailDialog] = React.useState({ open: false, pago: null });
+  const [deleteDialog, setDeleteDialog] = React.useState({ open: false, pago: null });
+  const [snackbar, setSnackbar] = React.useState({ open: false, message: '', severity: 'success' });
+
   React.useEffect(() => {
     loadPagos();
-  }, []);
+  }, [filters]);
 
   const loadPagos = async () => {
-    setLoading(true);
+    await fetchPagos(filters);
+  };
+
+  const handleOpenModal = (pago = null) => {
+    setEditingItem(pago);
+    setOpenModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setOpenModal(false);
+    setEditingItem(null);
+  };
+
+  const handleSuccess = async (formData) => {
     try {
-      // TODO: Reemplazar con endpoint real
-      // const data = await api.get('/pagos');
-      // setPagos(data);
-      setPagos([]);
+      if (editingItem) {
+        await updatePago(editingItem.id_pago, formData);
+        setSnackbar({ open: true, message: 'Pago actualizado correctamente', severity: 'success' });
+      } else {
+        await createPago(formData);
+        setSnackbar({ open: true, message: 'Pago creado correctamente', severity: 'success' });
+      }
+      handleCloseModal();
+      await loadPagos();
     } catch (error) {
-      console.error('Error al cargar pagos:', error);
-    } finally {
-      setLoading(false);
+      setSnackbar({ open: true, message: error.message || 'Error al guardar el pago', severity: 'error' });
     }
   };
 
-  const getEstadoColor = (estado) => {
-    const colors = {
-      pagado: 'success',
-      pendiente: 'warning',
-      vencido: 'error',
-      cancelado: 'default',
-    };
-    return colors[estado] || 'default';
+  const handleViewDetails = async (pago) => {
+    try {
+      const pagoCompleto = await fetchPagoById(pago.id_pago);
+      setDetailDialog({ open: true, pago: pagoCompleto || pago });
+    } catch (error) {
+      console.error('Error al cargar detalles:', error);
+      setDetailDialog({ open: true, pago });
+    }
+  };
+
+  const handleCloseDetailDialog = () => {
+    setDetailDialog({ open: false, pago: null });
+  };
+
+  const handleDeleteClick = (pago) => {
+    setDeleteDialog({ open: true, pago });
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteDialog({ open: false, pago: null });
+  };
+
+  const handleDeleteConfirm = async () => {
+    try {
+      await deletePago(deleteDialog.pago.id_pago);
+      setSnackbar({ open: true, message: 'Pago eliminado correctamente', severity: 'success' });
+      setDeleteDialog({ open: false, pago: null });
+      await loadPagos();
+    } catch (error) {
+      setSnackbar({ open: true, message: error.message || 'Error al eliminar el pago', severity: 'error' });
+    }
+  };
+
+  const handleFilterChange = (newFilters) => {
+    setFilters(newFilters);
+  };
+
+  const handleClearFilters = () => {
+    setFilters({
+      tipo: null,
+      estado: null,
+      fechaDesde: null,
+      fechaHasta: null,
+      observaciones: null,
+    });
+  };
+
+  const handleRefresh = () => {
+    loadPagos();
   };
 
   return (
@@ -69,107 +135,82 @@ function Pagos() {
           justifyContent: 'flex-end',
         }}
       >
-        <Button variant="contained" startIcon={<AddIcon />}>
+        <Button variant="contained" startIcon={<AddIcon />} onClick={() => handleOpenModal()}>
           Registrar Pago
         </Button>
       </Box>
 
-      {loading ? (
-        <Box display="flex" justifyContent="center" p={4}>
-          <CircularProgress />
-        </Box>
-      ) : isMobile ? (
-        <Stack spacing={2}>
-          {pagos.length === 0 ? (
-            <Typography variant="body1" color="text.secondary" textAlign="center" p={4}>
-              No hay pagos registrados
-            </Typography>
-          ) : (
-            pagos.map((pago) => (
-              <Card key={pago.id}>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom>
-                    {pago.alumnoNombre}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Monto: {formatCurrency(pago.monto)}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Fecha: {formatDate(pago.fecha)}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Método: {pago.metodoPago}
-                  </Typography>
-                  <Box sx={{ mt: 1, mb: 1 }}>
-                    <Chip
-                      label={pago.estado?.toUpperCase()}
-                      color={getEstadoColor(pago.estado)}
-                      size="small"
-                    />
-                  </Box>
-                  <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
-                    <IconButton size="small" color="primary">
-                      <VisibilityIcon />
-                    </IconButton>
-                  </Box>
-                </CardContent>
-              </Card>
-            ))
-          )}
-        </Stack>
-      ) : (
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>ID</TableCell>
-                <TableCell>Alumno</TableCell>
-                <TableCell>Monto</TableCell>
-                <TableCell>Fecha</TableCell>
-                <TableCell>Método de Pago</TableCell>
-                <TableCell>Estado</TableCell>
-                <TableCell align="right">Acciones</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {pagos.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} align="center">
-                    <Typography variant="body1" color="text.secondary" p={2}>
-                      No hay pagos registrados
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                pagos.map((pago) => (
-                  <TableRow key={pago.id} hover>
-                    <TableCell>{pago.id}</TableCell>
-                    <TableCell>{pago.alumnoNombre}</TableCell>
-                    <TableCell>{formatCurrency(pago.monto)}</TableCell>
-                    <TableCell>{formatDate(pago.fecha)}</TableCell>
-                    <TableCell>{pago.metodoPago}</TableCell>
-                    <TableCell>
-                      <Chip
-                        label={pago.estado?.toUpperCase()}
-                        color={getEstadoColor(pago.estado)}
-                        size="small"
-                      />
-                    </TableCell>
-                    <TableCell align="right">
-                      <IconButton size="small" color="primary">
-                        <VisibilityIcon />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      )}
+      <PagosFilters
+        filters={filters}
+        onFilterChange={handleFilterChange}
+        onClearFilters={handleClearFilters}
+      />
+
+      <PagosTable
+        pagos={pagos}
+        loading={loading}
+        onViewDetails={handleViewDetails}
+        onEdit={handleOpenModal}
+        onDelete={handleDeleteClick}
+        isMobile={isMobile}
+      />
+
+      {/* Modal para crear/editar pago */}
+      <Dialog
+        open={openModal}
+        onClose={handleCloseModal}
+        maxWidth="sm"
+        fullWidth
+        fullScreen={isMobile}
+      >
+        <DialogTitle>
+          {editingItem ? 'Editar Pago' : 'Crear Nuevo Pago'}
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ pt: 2 }}>
+            <PagoForm
+              onSuccess={handleSuccess}
+              onCancel={handleCloseModal}
+              initialData={editingItem}
+            />
+          </Box>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de detalles del pago */}
+      <PagoDetailsModal
+        open={detailDialog.open}
+        onClose={handleCloseDetailDialog}
+        pago={detailDialog.pago}
+        onRefresh={handleRefresh}
+      />
+
+      {/* Dialog de confirmación para eliminar */}
+      <ConfirmDeleteDialog
+        open={deleteDialog.open}
+        onClose={handleDeleteCancel}
+        onConfirm={handleDeleteConfirm}
+        title="el pago"
+        itemName={`#${deleteDialog.pago?.id_pago || ''}`}
+      />
+
+      {/* Snackbar para notificaciones */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }
 
 export default Pagos;
-
