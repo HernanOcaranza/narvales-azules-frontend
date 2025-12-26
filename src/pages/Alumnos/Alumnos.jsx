@@ -33,6 +33,8 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   Close as CloseIcon,
+  CheckCircle as CheckCircleIcon,
+  Cancel as CancelIcon,
 } from '@mui/icons-material';
 import * as alumnoService from '../../services/alumnoService';
 import * as tutorService from '../../services/tutorService';
@@ -142,6 +144,10 @@ function Alumnos() {
     return estado === 1 ? 'Activo' : 'Inactivo';
   };
 
+  const getCertificadoLabel = (certificado) => {
+    return certificado === 1 ? 'Sí' : 'No';
+  };
+
   const filteredAlumnos = alumnos.filter((alumno) =>
     Object.values(alumno).some((value) =>
       String(value).toLowerCase().includes(searchText.toLowerCase())
@@ -220,6 +226,14 @@ function Alumnos() {
                   <Typography variant="body2" color="text.secondary">
                     Condición: {alumno.condicion?.condicion || 'N/A'}
                   </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Certificado Médico: {getCertificadoLabel(alumno.certificado ?? 0)}
+                    {alumno.certificado === 1 ? (
+                      <CheckCircleIcon sx={{ ml: 0.5, fontSize: 16, color: 'success.main', verticalAlign: 'middle' }} />
+                    ) : (
+                      <CancelIcon sx={{ ml: 0.5, fontSize: 16, color: 'error.main', verticalAlign: 'middle' }} />
+                    )}
+                  </Typography>
                   <Box sx={{ mt: 1, mb: 1 }}>
                     <Chip
                       label={getEstadoLabel(alumno.estado)}
@@ -253,6 +267,7 @@ function Alumnos() {
                 <TableCell>Tutor</TableCell>
                 <TableCell>Categoría</TableCell>
                 <TableCell>Condición</TableCell>
+                <TableCell>Certificado</TableCell>
                 <TableCell>Estado</TableCell>
                 <TableCell align="right">Acciones</TableCell>
               </TableRow>
@@ -260,7 +275,7 @@ function Alumnos() {
             <TableBody>
               {filteredAlumnos.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={10} align="center">
+                  <TableCell colSpan={11} align="center">
                     <Typography variant="body1" color="text.secondary" p={2}>
                       No hay alumnos registrados
                     </Typography>
@@ -284,6 +299,25 @@ function Alumnos() {
                     </TableCell>
                     <TableCell>{alumno.categoria?.categoria || 'N/A'}</TableCell>
                     <TableCell>{alumno.condicion?.condicion || 'N/A'}</TableCell>
+                    <TableCell>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        {alumno.certificado === 1 ? (
+                          <>
+                            <CheckCircleIcon sx={{ fontSize: 18, color: 'success.main' }} />
+                            <Typography variant="body2" component="span">
+                              Sí
+                            </Typography>
+                          </>
+                        ) : (
+                          <>
+                            <CancelIcon sx={{ fontSize: 18, color: 'error.main' }} />
+                            <Typography variant="body2" component="span">
+                              No
+                            </Typography>
+                          </>
+                        )}
+                      </Box>
+                    </TableCell>
                     <TableCell>
                       <Chip
                         label={getEstadoLabel(alumno.estado)}
@@ -435,6 +469,29 @@ function Alumnos() {
                   <Typography variant="body1" sx={{ mb: 2 }}>
                     {detailDialog.alumno.condicion?.condicion || 'N/A'}
                   </Typography>
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="body2" color="text.secondary">
+                    Certificado Médico
+                  </Typography>
+                  <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                    {detailDialog.alumno.certificado === 1 ? (
+                      <>
+                        <CheckCircleIcon sx={{ fontSize: 20, color: 'success.main' }} />
+                        <Typography variant="body1" component="span">
+                          Sí
+                        </Typography>
+                      </>
+                    ) : (
+                      <>
+                        <CancelIcon sx={{ fontSize: 20, color: 'error.main' }} />
+                        <Typography variant="body1" component="span">
+                          No
+                        </Typography>
+                      </>
+                    )}
+                  </Box>
                 </Grid>
 
                 <Grid item xs={12}>

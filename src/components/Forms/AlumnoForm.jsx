@@ -15,6 +15,8 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
+  Checkbox,
+  FormControlLabel,
 } from '@mui/material';
 import { Save as SaveIcon, Add as AddIcon } from '@mui/icons-material';
 import * as alumnoService from '../../services/alumnoService';
@@ -39,6 +41,7 @@ function AlumnoForm({ onSuccess, onCancel, initialData = null }) {
         ...initialData,
         fecha_nacimiento: formatDateForInput(initialData.fecha_nacimiento),
         fecha_registro: formatDateForInput(initialData.fecha_registro),
+        certificado: initialData.certificado !== undefined && initialData.certificado !== null ? initialData.certificado : 0,
       };
     }
     return {
@@ -49,6 +52,7 @@ function AlumnoForm({ onSuccess, onCancel, initialData = null }) {
       direccion: '',
       fecha_registro: new Date().toISOString().split('T')[0],
       estado: 1,
+      certificado: 0,
       id_tutor: '',
       id_categoria: '',
       id_condicion: '',
@@ -154,10 +158,14 @@ function AlumnoForm({ onSuccess, onCancel, initialData = null }) {
   }, [tutorSearchText, searchTutores]);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: name === 'estado' ? Number(value) : value,
+      [name]: type === 'checkbox' 
+        ? (checked ? 1 : 0)
+        : name === 'estado' 
+        ? Number(value) 
+        : value,
     }));
     // Limpiar error del campo cuando el usuario empieza a escribir
     if (errors[name]) {
@@ -263,10 +271,26 @@ function AlumnoForm({ onSuccess, onCancel, initialData = null }) {
     setLoading(true);
     try {
       const isEditing = initialData && initialData.id_alumno;
+      
+      // Preparar datos para enviar - solo campos actualizables
+      const dataToSend = {
+        nombre: formData.nombre,
+        apellido: formData.apellido,
+        dni: formData.dni || null,
+        fecha_nacimiento: formData.fecha_nacimiento,
+        direccion: formData.direccion || null,
+        fecha_registro: formData.fecha_registro,
+        estado: formData.estado,
+        certificado: formData.certificado !== undefined ? formData.certificado : 0,
+        id_tutor: formData.id_tutor,
+        id_categoria: formData.id_categoria,
+        id_condicion: formData.id_condicion,
+      };
+
       if (isEditing) {
-        await alumnoService.update(initialData.id_alumno, formData);
+        await alumnoService.update(initialData.id_alumno, dataToSend);
       } else {
-        await alumnoService.create(formData);
+        await alumnoService.create(dataToSend);
       }
       if (onSuccess) {
         onSuccess();
@@ -275,6 +299,7 @@ function AlumnoForm({ onSuccess, onCancel, initialData = null }) {
       console.error('Error al guardar alumno:', error);
       setError(
         error.response?.data?.message ||
+          error.message ||
           'Error al guardar el alumno. Por favor, intente nuevamente.'
       );
     } finally {
@@ -389,6 +414,18 @@ function AlumnoForm({ onSuccess, onCancel, initialData = null }) {
               <MenuItem value={0}>Inactivo</MenuItem>
             </Select>
           </FormControl>
+
+          {/* Certificado Médico */}
+          <FormControlLabel
+            control={
+              <Checkbox
+                name="certificado"
+                checked={formData.certificado === 1}
+                onChange={handleChange}
+              />
+            }
+            label="Certificado Médico"
+          />
 
           {/* Tutor - Autocomplete con búsqueda */}
           <Box>
