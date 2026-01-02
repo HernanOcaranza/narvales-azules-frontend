@@ -47,6 +47,17 @@ export const getById = async (id) => {
 };
 
 /**
+ * Obtiene un alumno completo con toda su información relacionada (membresías, pagos, detalles)
+ * @param {string|number} id - ID del alumno
+ * @returns {Promise} - Datos completos del alumno
+ */
+export const getCompletoById = async (id) => {
+  const response = await api.get(`${ENDPOINT}/${id}/completo`);
+  // Si la respuesta tiene un campo 'data', extraerlo, sino devolver la respuesta completa
+  return response?.data || response;
+};
+
+/**
  * Crea un nuevo alumno
  * @param {object} data - Datos del alumno a crear (nombre, apellido, dni, fecha_nacimiento, direccion, fecha_registro, estado, id_tutor, id_categoria, id_condicion)
  * @returns {Promise} - Alumno creado
@@ -80,6 +91,7 @@ const alumnoService = {
   getByTutor,
   searchByNombre,
   getById,
+  getCompletoById,
   create,
   update,
   deleteById,

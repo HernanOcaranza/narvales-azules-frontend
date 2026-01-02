@@ -31,11 +31,18 @@ function MembreciaForm({ onSuccess, onCancel, initialData = null }) {
 
   const [formData, setFormData] = React.useState(() => {
     if (initialData) {
+      // Asegurarse de que los detalles de pago incluyan sus IDs si existen
+      const detallesPago = (initialData.pago?.detalles || []).map(detalle => ({
+        ...detalle,
+        // Preservar el ID si existe para poder actualizarlo
+        id_detalle_pago: detalle.id_detalle_pago || undefined,
+      }));
+      
       return {
         ...initialData,
         fecha_inicio: formatDateForInput(initialData.fecha_inicio),
         fecha_fin: formatDateForInput(initialData.fecha_fin),
-        detallesPago: initialData.pago?.detalles || [],
+        detallesPago: detallesPago,
         fecha_pago: formatDateForInput(initialData.pago?.fecha_pago),
         observaciones_pago: initialData.pago?.observaciones || '',
       };
@@ -52,6 +59,26 @@ function MembreciaForm({ onSuccess, onCancel, initialData = null }) {
       observaciones_pago: '',
     };
   });
+
+  // Actualizar formData cuando cambia initialData (útil cuando se carga la membresía completa)
+  React.useEffect(() => {
+    if (initialData) {
+      const detallesPago = (initialData.pago?.detalles || []).map(detalle => ({
+        ...detalle,
+        id_detalle_pago: detalle.id_detalle_pago || undefined,
+      }));
+      
+      setFormData(prev => ({
+        ...prev,
+        ...initialData,
+        fecha_inicio: formatDateForInput(initialData.fecha_inicio),
+        fecha_fin: formatDateForInput(initialData.fecha_fin),
+        detallesPago: detallesPago,
+        fecha_pago: formatDateForInput(initialData.pago?.fecha_pago) || prev.fecha_pago,
+        observaciones_pago: initialData.pago?.observaciones || prev.observaciones_pago,
+      }));
+    }
+  }, [initialData]);
 
   const [alumnos, setAlumnos] = React.useState([]);
   const [grupos, setGrupos] = React.useState([]);
@@ -177,10 +204,14 @@ function MembreciaForm({ onSuccess, onCancel, initialData = null }) {
         // Si hay detalles de pago, incluir el objeto pago
         if (formData.detallesPago && formData.detallesPago.length > 0) {
           requestData.pago = {
+            // Si estamos editando y hay un pago previo, incluir su ID
+            ...(initialData?.pago?.id_pago ? { id_pago: initialData.pago.id_pago } : {}),
             fecha_pago: formData.fecha_pago || formData.fecha_inicio,
-            estado: 'completo', // El estado puede ajustarse según la lógica de negocio
+            estado: 'completo', // El estado debe ser: pendiente, parcial, completo, cancelado
             observaciones: formData.observaciones_pago || undefined,
             detalles: formData.detallesPago.map(detalle => ({
+              // Incluir el ID si existe para que el backend sepa si es actualización o creación
+              ...(detalle.id_detalle_pago ? { id_detalle_pago: detalle.id_detalle_pago } : {}),
               metodo_pago: detalle.metodo_pago,
               monto_parcial: Number(detalle.monto_parcial),
               fecha_detalle: detalle.fecha_detalle,
@@ -188,6 +219,9 @@ function MembreciaForm({ onSuccess, onCancel, initialData = null }) {
             })),
           };
         }
+
+        // Log para debugging (puedes eliminarlo después)
+        console.log('Datos del formulario a enviar:', JSON.stringify(requestData, null, 2));
 
         await onSuccess(requestData);
       }

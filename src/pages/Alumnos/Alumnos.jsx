@@ -26,6 +26,7 @@ import {
   Chip,
   Divider,
   Grid,
+  Alert,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -35,12 +36,18 @@ import {
   Close as CloseIcon,
   CheckCircle as CheckCircleIcon,
   Cancel as CancelIcon,
+  Person as PersonIcon,
+  Category as CategoryIcon,
+  Assignment as AssignmentIcon,
+  CreditCard as CreditCardIcon,
+  Payment as PaymentIcon,
+  Info as InfoIcon,
 } from '@mui/icons-material';
 import * as alumnoService from '../../services/alumnoService';
 import * as tutorService from '../../services/tutorService';
 import AlumnoForm from '../../components/Forms/AlumnoForm';
 import ConfirmDeleteDialog from '../../components/Dialogs/ConfirmDeleteDialog';
-import { formatDate } from '../../utils/helpers';
+import { formatDate, formatCurrency } from '../../utils/helpers';
 
 function Alumnos() {
   const [alumnos, setAlumnos] = React.useState([]);
@@ -52,6 +59,9 @@ function Alumnos() {
   const [detailDialog, setDetailDialog] = React.useState({ open: false, alumno: null });
   const [tutorDetails, setTutorDetails] = React.useState(null);
   const [loadingTutor, setLoadingTutor] = React.useState(false);
+  const [loadingAlumnoCompleto, setLoadingAlumnoCompleto] = React.useState(false);
+  const [alumnoCompleto, setAlumnoCompleto] = React.useState(null);
+  const [errorAlumnoCompleto, setErrorAlumnoCompleto] = React.useState(null);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
@@ -111,29 +121,54 @@ function Alumnos() {
 
   const handleOpenDetailDialog = async (alumno) => {
     setDetailDialog({ open: true, alumno });
+    setAlumnoCompleto(null);
     setTutorDetails(null);
+    setErrorAlumnoCompleto(null);
+    setLoadingAlumnoCompleto(true);
     
-    // Si el alumno tiene id_tutor pero no tiene los datos completos del tutor, cargarlos
-    if (alumno.id_tutor && (!alumno.tutor || !alumno.tutor.telefono)) {
-      setLoadingTutor(true);
-      try {
-        const response = await tutorService.getById(alumno.id_tutor);
-        const tutor = response?.data || response;
-        setTutorDetails(tutor);
-      } catch (error) {
-        console.error('Error al cargar detalles del tutor:', error);
-      } finally {
-        setLoadingTutor(false);
+    try {
+      // Cargar información completa del alumno usando el nuevo endpoint
+      const alumnoCompletoData = await alumnoService.getCompletoById(alumno.id_alumno);
+      setAlumnoCompleto(alumnoCompletoData);
+      setErrorAlumnoCompleto(null);
+      
+      // Si el alumno completo tiene tutor, usarlo
+      if (alumnoCompletoData?.tutor) {
+        setTutorDetails(alumnoCompletoData.tutor);
+      } else if (alumno.id_tutor && (!alumno.tutor || !alumno.tutor.telefono)) {
+        // Fallback: cargar tutor si no viene en la respuesta completa
+        setLoadingTutor(true);
+        try {
+          const response = await tutorService.getById(alumno.id_tutor);
+          const tutor = response?.data || response;
+          setTutorDetails(tutor);
+        } catch (error) {
+          console.error('Error al cargar detalles del tutor:', error);
+        } finally {
+          setLoadingTutor(false);
+        }
+      } else if (alumno.tutor) {
+        setTutorDetails(alumno.tutor);
       }
-    } else if (alumno.tutor) {
-      // Si ya tiene los datos del tutor, usarlos
-      setTutorDetails(alumno.tutor);
+    } catch (error) {
+      console.error('Error al cargar información completa del alumno:', error);
+      // Si falla el endpoint completo, usar los datos básicos del alumno
+      // Esto permite mostrar al menos la información básica aunque el endpoint falle
+      setAlumnoCompleto(null);
+      setErrorAlumnoCompleto(error.message || 'No se pudo cargar la información completa del alumno. Se muestra información básica.');
+      if (alumno.tutor) {
+        setTutorDetails(alumno.tutor);
+      }
+    } finally {
+      setLoadingAlumnoCompleto(false);
     }
   };
 
   const handleCloseDetailDialog = () => {
     setDetailDialog({ open: false, alumno: null });
+    setAlumnoCompleto(null);
     setTutorDetails(null);
+    setErrorAlumnoCompleto(null);
   };
 
   const getEstadoColor = (estado) => {
@@ -378,7 +413,7 @@ function Alumnos() {
       <Dialog
         open={detailDialog.open}
         onClose={handleCloseDetailDialog}
-        maxWidth="md"
+        maxWidth="lg"
         fullWidth
         fullScreen={isMobile}
       >
@@ -393,173 +428,412 @@ function Alumnos() {
           </Box>
         </DialogTitle>
         <DialogContent>
-          {detailDialog.alumno && (
+          {loadingAlumnoCompleto ? (
+            <Box display="flex" justifyContent="center" p={4}>
+              <CircularProgress />
+            </Box>
+          ) : (alumnoCompleto || detailDialog.alumno) ? (
             <Box sx={{ pt: 2 }}>
-              <Grid container spacing={3}>
-                {/* Información del Alumno */}
-                <Grid item xs={12}>
-                  <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>
-                    Información del Alumno
-                  </Typography>
-                  <Divider sx={{ mb: 2 }} />
-                </Grid>
-                
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="body2" color="text.secondary">
-                    Nombre Completo
-                  </Typography>
-                  <Typography variant="body1" sx={{ mb: 2 }}>
-                    {`${detailDialog.alumno.nombre} ${detailDialog.alumno.apellido}`}
-                  </Typography>
-                </Grid>
-
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="body2" color="text.secondary">
-                    Estado
-                  </Typography>
-                  <Box sx={{ mb: 2 }}>
-                    <Chip
-                      label={getEstadoLabel(detailDialog.alumno.estado)}
-                      color={getEstadoColor(detailDialog.alumno.estado)}
-                      size="small"
-                    />
-                  </Box>
-                </Grid>
-
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="body2" color="text.secondary">
-                    DNI
-                  </Typography>
-                  <Typography variant="body1" sx={{ mb: 2 }}>
-                    {detailDialog.alumno.dni || 'N/A'}
-                  </Typography>
-                </Grid>
-
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="body2" color="text.secondary">
-                    Fecha de Nacimiento
-                  </Typography>
-                  <Typography variant="body1" sx={{ mb: 2 }}>
-                    {formatDate(detailDialog.alumno.fecha_nacimiento)}
-                  </Typography>
-                </Grid>
-
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="body2" color="text.secondary">
-                    Fecha de Registro
-                  </Typography>
-                  <Typography variant="body1" sx={{ mb: 2 }}>
-                    {formatDate(detailDialog.alumno.fecha_registro)}
-                  </Typography>
-                </Grid>
-
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="body2" color="text.secondary">
-                    Categoría
-                  </Typography>
-                  <Typography variant="body1" sx={{ mb: 2 }}>
-                    {detailDialog.alumno.categoria?.categoria || 'N/A'}
-                  </Typography>
-                </Grid>
-
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="body2" color="text.secondary">
-                    Condición
-                  </Typography>
-                  <Typography variant="body1" sx={{ mb: 2 }}>
-                    {detailDialog.alumno.condicion?.condicion || 'N/A'}
-                  </Typography>
-                </Grid>
-
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="body2" color="text.secondary">
-                    Certificado Médico
-                  </Typography>
-                  <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                    {detailDialog.alumno.certificado === 1 ? (
-                      <>
-                        <CheckCircleIcon sx={{ fontSize: 20, color: 'success.main' }} />
-                        <Typography variant="body1" component="span">
-                          Sí
+              {errorAlumnoCompleto && (
+                <Alert severity="warning" sx={{ mb: 2 }}>
+                  {errorAlumnoCompleto}
+                </Alert>
+              )}
+              {(() => {
+                const alumno = alumnoCompleto || detailDialog.alumno;
+                return (
+                  <Grid container spacing={3}>
+                    {/* Información Personal */}
+                    <Grid item xs={12}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                        <InfoIcon color="primary" />
+                        <Typography variant="h6" gutterBottom>
+                          Información Personal
                         </Typography>
-                      </>
-                    ) : (
-                      <>
-                        <CancelIcon sx={{ fontSize: 20, color: 'error.main' }} />
-                        <Typography variant="body1" component="span">
-                          No
-                        </Typography>
-                      </>
-                    )}
-                  </Box>
-                </Grid>
-
-                <Grid item xs={12}>
-                  <Typography variant="body2" color="text.secondary">
-                    Dirección
-                  </Typography>
-                  <Typography variant="body1" sx={{ mb: 2 }}>
-                    {detailDialog.alumno.direccion || 'N/A'}
-                  </Typography>
-                </Grid>
-
-                {/* Información del Tutor */}
-                <Grid item xs={12}>
-                  <Typography variant="h6" gutterBottom sx={{ mt: 2, mb: 2 }}>
-                    Información del Tutor
-                  </Typography>
-                  <Divider sx={{ mb: 2 }} />
-                </Grid>
-
-                {loadingTutor ? (
-                  <Grid item xs={12}>
-                    <Box display="flex" justifyContent="center" p={2}>
-                      <CircularProgress size={24} />
-                    </Box>
-                  </Grid>
-                ) : (tutorDetails || detailDialog.alumno.tutor) ? (
-                  <>
+                      </Box>
+                      <Divider sx={{ mb: 2 }} />
+                    </Grid>
+                    
                     <Grid item xs={12} sm={6}>
                       <Typography variant="body2" color="text.secondary">
                         Nombre Completo
                       </Typography>
                       <Typography variant="body1" sx={{ mb: 2 }}>
-                        {`${(tutorDetails || detailDialog.alumno.tutor)?.nombre || ''} ${(tutorDetails || detailDialog.alumno.tutor)?.apellido || ''}`.trim() || 'N/A'}
+                        {`${alumno.nombre} ${alumno.apellido}`}
                       </Typography>
                     </Grid>
 
                     <Grid item xs={12} sm={6}>
                       <Typography variant="body2" color="text.secondary">
-                        Teléfono
+                        Estado
+                      </Typography>
+                      <Box sx={{ mb: 2 }}>
+                        <Chip
+                          label={getEstadoLabel(alumno.estado)}
+                          color={getEstadoColor(alumno.estado)}
+                          size="small"
+                        />
+                      </Box>
+                    </Grid>
+
+                    <Grid item xs={12} sm={6}>
+                      <Typography variant="body2" color="text.secondary">
+                        DNI
                       </Typography>
                       <Typography variant="body1" sx={{ mb: 2 }}>
-                        {(tutorDetails || detailDialog.alumno.tutor)?.telefono || 'N/A'}
+                        {alumno.dni || 'N/A'}
                       </Typography>
                     </Grid>
-                  </>
-                ) : (
-                  <Grid item xs={12}>
-                    <Typography variant="body2" color="text.secondary">
-                      No hay tutor asignado
-                    </Typography>
+
+                    <Grid item xs={12} sm={6}>
+                      <Typography variant="body2" color="text.secondary">
+                        Fecha de Nacimiento
+                      </Typography>
+                      <Typography variant="body1" sx={{ mb: 2 }}>
+                        {formatDate(alumno.fecha_nacimiento)}
+                      </Typography>
+                    </Grid>
+
+                    <Grid item xs={12} sm={6}>
+                      <Typography variant="body2" color="text.secondary">
+                        Fecha de Registro
+                      </Typography>
+                      <Typography variant="body1" sx={{ mb: 2 }}>
+                        {formatDate(alumno.fecha_registro)}
+                      </Typography>
+                    </Grid>
+
+                    <Grid item xs={12} sm={6}>
+                      <Typography variant="body2" color="text.secondary">
+                        Certificado Médico
+                      </Typography>
+                      <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                        {alumno.certificado === 1 ? (
+                          <>
+                            <CheckCircleIcon sx={{ fontSize: 20, color: 'success.main' }} />
+                            <Typography variant="body1" component="span">
+                              Sí
+                            </Typography>
+                          </>
+                        ) : (
+                          <>
+                            <CancelIcon sx={{ fontSize: 20, color: 'error.main' }} />
+                            <Typography variant="body1" component="span">
+                              No
+                            </Typography>
+                          </>
+                        )}
+                      </Box>
+                    </Grid>
+
+                    <Grid item xs={12}>
+                      <Typography variant="body2" color="text.secondary">
+                        Dirección
+                      </Typography>
+                      <Typography variant="body1" sx={{ mb: 2 }}>
+                        {alumno.direccion || 'N/A'}
+                      </Typography>
+                    </Grid>
+
+                    {/* Tutor */}
+                    <Grid item xs={12}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, mt: 2 }}>
+                        <PersonIcon color="primary" />
+                        <Typography variant="h6" gutterBottom>
+                          Tutor
+                        </Typography>
+                      </Box>
+                      <Divider sx={{ mb: 2 }} />
+                    </Grid>
+
+                    {loadingTutor ? (
+                      <Grid item xs={12}>
+                        <Box display="flex" justifyContent="center" p={2}>
+                          <CircularProgress size={24} />
+                        </Box>
+                      </Grid>
+                    ) : (tutorDetails || alumno.tutor) ? (
+                      <>
+                        <Grid item xs={12} sm={6}>
+                          <Typography variant="body2" color="text.secondary">
+                            Nombre Completo
+                          </Typography>
+                          <Typography variant="body1" sx={{ mb: 2 }}>
+                            {`${(tutorDetails || alumno.tutor)?.nombre || ''} ${(tutorDetails || alumno.tutor)?.apellido || ''}`.trim() || 'N/A'}
+                          </Typography>
+                        </Grid>
+
+                        <Grid item xs={12} sm={6}>
+                          <Typography variant="body2" color="text.secondary">
+                            Teléfono
+                          </Typography>
+                          <Typography variant="body1" sx={{ mb: 2 }}>
+                            {(tutorDetails || alumno.tutor)?.telefono || 'N/A'}
+                          </Typography>
+                        </Grid>
+
+                        {(tutorDetails || alumno.tutor)?.dni && (
+                          <Grid item xs={12} sm={6}>
+                            <Typography variant="body2" color="text.secondary">
+                              DNI
+                            </Typography>
+                            <Typography variant="body1" sx={{ mb: 2 }}>
+                              {(tutorDetails || alumno.tutor).dni}
+                            </Typography>
+                          </Grid>
+                        )}
+                      </>
+                    ) : (
+                      <Grid item xs={12}>
+                        <Typography variant="body2" color="text.secondary">
+                          No hay tutor asignado
+                        </Typography>
+                      </Grid>
+                    )}
+
+                    {/* Categoría y Condición */}
+                    <Grid item xs={12}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, mt: 2 }}>
+                        <CategoryIcon color="primary" />
+                        <Typography variant="h6" gutterBottom>
+                          Categoría y Condición
+                        </Typography>
+                      </Box>
+                      <Divider sx={{ mb: 2 }} />
+                    </Grid>
+
+                    <Grid item xs={12} sm={6}>
+                      <Typography variant="body2" color="text.secondary">
+                        Categoría
+                      </Typography>
+                      <Typography variant="body1" sx={{ mb: 2 }}>
+                        {alumno.categoria?.categoria || 'N/A'}
+                      </Typography>
+                    </Grid>
+
+                    <Grid item xs={12} sm={6}>
+                      <Typography variant="body2" color="text.secondary">
+                        Condición
+                      </Typography>
+                      <Typography variant="body1" sx={{ mb: 2 }}>
+                        {alumno.condicion?.condicion || 'N/A'}
+                      </Typography>
+                    </Grid>
+
+                    {/* Membresías */}
+                    <Grid item xs={12}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, mt: 2 }}>
+                        <CreditCardIcon color="primary" />
+                        <Typography variant="h6" gutterBottom>
+                          Membresías
+                        </Typography>
+                      </Box>
+                      <Divider sx={{ mb: 2 }} />
+                    </Grid>
+
+                    {alumnoCompleto?.membresias && alumnoCompleto.membresias.length > 0 ? (
+                      <Grid item xs={12}>
+                        <Stack spacing={3}>
+                          {alumnoCompleto.membresias.map((membresia, index) => {
+                            const totalPago = membresia.pago?.detalles?.reduce(
+                              (sum, detalle) => sum + (parseFloat(detalle.monto_parcial) || 0),
+                              0
+                            ) || 0;
+
+                            return (
+                              <Card key={membresia.id_membrecia || index} variant="outlined" sx={{ p: 2 }}>
+                                <Box sx={{ mb: 2 }}>
+                                  <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                                    Membresía #{index + 1} - {membresia.tipo_membrecia?.tipo_membrecia || 'N/A'}
+                                  </Typography>
+                                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 1 }}>
+                                    <Chip
+                                      label={membresia.estado || 'N/A'}
+                                      color={membresia.estado === 'activa' ? 'success' : 'default'}
+                                      size="small"
+                                    />
+                                  </Box>
+                                </Box>
+
+                                <Grid container spacing={2} sx={{ mb: 2 }}>
+                                  <Grid item xs={12} sm={6}>
+                                    <Typography variant="body2" color="text.secondary">
+                                      Fecha Inicio
+                                    </Typography>
+                                    <Typography variant="body2">
+                                      {formatDate(membresia.fecha_inicio)}
+                                    </Typography>
+                                  </Grid>
+                                  <Grid item xs={12} sm={6}>
+                                    <Typography variant="body2" color="text.secondary">
+                                      Fecha Fin
+                                    </Typography>
+                                    <Typography variant="body2">
+                                      {formatDate(membresia.fecha_fin)}
+                                    </Typography>
+                                  </Grid>
+                                  {membresia.grupo && (
+                                    <>
+                                      <Grid item xs={12} sm={6}>
+                                        <Typography variant="body2" color="text.secondary">
+                                          Grupo
+                                        </Typography>
+                                        <Typography variant="body2">
+                                          {membresia.grupo?.nombre || 'N/A'}
+                                        </Typography>
+                                      </Grid>
+                                      <Grid item xs={12} sm={6}>
+                                        <Typography variant="body2" color="text.secondary">
+                                          Disciplina
+                                        </Typography>
+                                        <Typography variant="body2">
+                                          {membresia.grupo.disciplina?.disciplina || 'N/A'}
+                                        </Typography>
+                                      </Grid>
+                                    </>
+                                  )}
+                                  {membresia.tipo_membrecia?.frecuencia_semanal && (
+                                    <Grid item xs={12} sm={6}>
+                                      <Typography variant="body2" color="text.secondary">
+                                        Frecuencia Semanal
+                                      </Typography>
+                                      <Typography variant="body2">
+                                        {membresia.tipo_membrecia.frecuencia_semanal} veces por semana
+                                      </Typography>
+                                    </Grid>
+                                  )}
+                                </Grid>
+
+                                {/* Pago */}
+                                {membresia.pago && (
+                                  <Box sx={{ mt: 2, pt: 2, borderTop: 1, borderColor: 'divider' }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                                      <PaymentIcon color="primary" fontSize="small" />
+                                      <Typography variant="subtitle2" fontWeight="bold">
+                                        Pago
+                                      </Typography>
+                                    </Box>
+                                    <Grid container spacing={2} sx={{ mb: 2 }}>
+                                      <Grid item xs={12} sm={6}>
+                                        <Typography variant="body2" color="text.secondary">
+                                          Fecha de Pago
+                                        </Typography>
+                                        <Typography variant="body2">
+                                          {formatDate(membresia.pago.fecha_pago)}
+                                        </Typography>
+                                      </Grid>
+                                      <Grid item xs={12} sm={6}>
+                                        <Typography variant="body2" color="text.secondary">
+                                          Estado
+                                        </Typography>
+                                        <Chip
+                                          label={membresia.pago.estado || 'N/A'}
+                                          color={membresia.pago.estado === 'completado' ? 'success' : 'default'}
+                                          size="small"
+                                        />
+                                      </Grid>
+                                      {membresia.pago.observaciones && (
+                                        <Grid item xs={12}>
+                                          <Typography variant="body2" color="text.secondary">
+                                            Observaciones
+                                          </Typography>
+                                          <Typography variant="body2">
+                                            {membresia.pago.observaciones}
+                                          </Typography>
+                                        </Grid>
+                                      )}
+                                      {totalPago > 0 && (
+                                        <Grid item xs={12}>
+                                          <Typography variant="body2" color="text.secondary">
+                                            Total Pagado
+                                          </Typography>
+                                          <Typography variant="h6" color="primary">
+                                            {formatCurrency(totalPago)}
+                                          </Typography>
+                                        </Grid>
+                                      )}
+                                    </Grid>
+
+                                    {/* Detalles de Pago */}
+                                    {membresia.pago.detalles && membresia.pago.detalles.length > 0 && (
+                                      <Box sx={{ mt: 2 }}>
+                                        <Typography variant="body2" fontWeight="bold" gutterBottom>
+                                          Detalles de Pago:
+                                        </Typography>
+                                        <Stack spacing={1}>
+                                          {membresia.pago.detalles.map((detalle, detalleIndex) => (
+                                            <Box
+                                              key={detalle.id_detalle_pago || detalleIndex}
+                                              sx={{
+                                                p: 1.5,
+                                                bgcolor: 'grey.50',
+                                                borderRadius: 1,
+                                                border: 1,
+                                                borderColor: 'grey.200',
+                                              }}
+                                            >
+                                              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+                                                <Typography variant="body2" fontWeight="medium">
+                                                  {detalle.metodo_pago === 'efectivo' ? '💵 Efectivo' :
+                                                   detalle.metodo_pago === 'transferencia' ? '🏦 Transferencia' :
+                                                   detalle.metodo_pago === 'tarjeta' ? '💳 Tarjeta' :
+                                                   detalle.metodo_pago || 'N/A'}
+                                                </Typography>
+                                                <Typography variant="body2" fontWeight="bold">
+                                                  {formatCurrency(detalle.monto_parcial)}
+                                                </Typography>
+                                              </Box>
+                                              <Typography variant="caption" color="text.secondary">
+                                                Fecha: {formatDate(detalle.fecha_detalle)}
+                                              </Typography>
+                                              {detalle.referencia_transferencia && (
+                                                <Typography variant="caption" color="text.secondary" display="block">
+                                                  Referencia: {detalle.referencia_transferencia}
+                                                </Typography>
+                                              )}
+                                            </Box>
+                                          ))}
+                                        </Stack>
+                                      </Box>
+                                    )}
+                                  </Box>
+                                )}
+                              </Card>
+                            );
+                          })}
+                        </Stack>
+                      </Grid>
+                    ) : (
+                      <Grid item xs={12}>
+                        <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                          Este alumno no tiene membresías registradas
+                        </Typography>
+                      </Grid>
+                    )}
                   </Grid>
-                )}
-              </Grid>
+                );
+              })()}
+            </Box>
+          ) : (
+            <Box p={2}>
+              <Typography variant="body2" color="error">
+                Error al cargar la información del alumno
+              </Typography>
             </Box>
           )}
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDetailDialog}>Cerrar</Button>
-          {detailDialog.alumno && (
+          {(alumnoCompleto || detailDialog.alumno) && (
             <Button
               variant="contained"
               startIcon={<EditIcon />}
               onClick={() => {
                 handleCloseDetailDialog();
-                handleOpenModal(detailDialog.alumno);
+                handleOpenModal(alumnoCompleto || detailDialog.alumno);
               }}
             >
-              Editar
+              Editar Alumno
             </Button>
           )}
         </DialogActions>

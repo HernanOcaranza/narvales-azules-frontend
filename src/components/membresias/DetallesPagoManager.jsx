@@ -33,6 +33,8 @@ function DetallesPagoManager({ detalles = [], onChange, errors = {} }) {
   const [localDetalles, setLocalDetalles] = React.useState(() => {
     if (!detalles || !Array.isArray(detalles)) return [];
     return detalles.map(d => ({
+      // Preservar el ID si existe para poder actualizarlo
+      id_detalle_pago: d.id_detalle_pago || undefined,
       metodo_pago: d.metodo_pago || '',
       monto_parcial: d.monto_parcial || '',
       fecha_detalle: formatDateForInput(d.fecha_detalle),
@@ -43,11 +45,15 @@ function DetallesPagoManager({ detalles = [], onChange, errors = {} }) {
   React.useEffect(() => {
     if (detalles && Array.isArray(detalles)) {
       setLocalDetalles(detalles.map(d => ({
+        // Preservar el ID si existe para poder actualizarlo
+        id_detalle_pago: d.id_detalle_pago || undefined,
         metodo_pago: d.metodo_pago || '',
         monto_parcial: d.monto_parcial || '',
         fecha_detalle: formatDateForInput(d.fecha_detalle),
         referencia_transferencia: d.referencia_transferencia || '',
       })));
+    } else if (!detalles || !Array.isArray(detalles)) {
+      setLocalDetalles([]);
     }
   }, [detalles]);
 

@@ -271,26 +271,10 @@ function AlumnoForm({ onSuccess, onCancel, initialData = null }) {
     setLoading(true);
     try {
       const isEditing = initialData && initialData.id_alumno;
-      
-      // Preparar datos para enviar - solo campos actualizables
-      const dataToSend = {
-        nombre: formData.nombre,
-        apellido: formData.apellido,
-        dni: formData.dni || null,
-        fecha_nacimiento: formData.fecha_nacimiento,
-        direccion: formData.direccion || null,
-        fecha_registro: formData.fecha_registro,
-        estado: formData.estado,
-        certificado: formData.certificado !== undefined ? formData.certificado : 0,
-        id_tutor: formData.id_tutor,
-        id_categoria: formData.id_categoria,
-        id_condicion: formData.id_condicion,
-      };
-
       if (isEditing) {
-        await alumnoService.update(initialData.id_alumno, dataToSend);
+        await alumnoService.update(initialData.id_alumno, formData);
       } else {
-        await alumnoService.create(dataToSend);
+        await alumnoService.create(formData);
       }
       if (onSuccess) {
         onSuccess();
@@ -299,7 +283,6 @@ function AlumnoForm({ onSuccess, onCancel, initialData = null }) {
       console.error('Error al guardar alumno:', error);
       setError(
         error.response?.data?.message ||
-          error.message ||
           'Error al guardar el alumno. Por favor, intente nuevamente.'
       );
     } finally {

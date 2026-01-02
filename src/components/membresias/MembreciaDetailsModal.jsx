@@ -18,11 +18,12 @@ import {
   TableRow,
   Paper,
   IconButton,
+  Alert,
 } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
 import { formatDate, formatCurrency } from '../../utils/helpers';
 
-function MembreciaDetailsModal({ open, onClose, membresia }) {
+function MembreciaDetailsModal({ open, onClose, membresia, warning }) {
   if (!membresia) return null;
 
   const getEstadoColor = (estado) => {
@@ -57,6 +58,11 @@ function MembreciaDetailsModal({ open, onClose, membresia }) {
       </DialogTitle>
       <DialogContent>
         <Box sx={{ pt: 2 }}>
+          {warning && (
+            <Alert severity="warning" sx={{ mb: 2 }}>
+              {warning}
+            </Alert>
+          )}
           <Grid container spacing={3}>
             {/* Información de la Membresía */}
             <Grid item xs={12}>

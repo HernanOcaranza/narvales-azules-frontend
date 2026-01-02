@@ -27,6 +27,12 @@ export const getAll = async (filters = {}) => {
   if (filters.idGrupo) {
     params.append('idGrupo', filters.idGrupo);
   }
+  if (filters.fechaDesde) {
+    params.append('fechaDesde', filters.fechaDesde);
+  }
+  if (filters.fechaHasta) {
+    params.append('fechaHasta', filters.fechaHasta);
+  }
   
   const queryString = params.toString();
   const url = queryString ? `${ENDPOINT}?${queryString}` : ENDPOINT;
@@ -56,6 +62,17 @@ export const getById = async (id) => {
 };
 
 /**
+ * Obtiene una membresía completa con toda su información relacionada (alumno, grupo, tipo de membresía, pago y detalles de pago)
+ * @param {string|number} id - ID de la membresía
+ * @returns {Promise} - Datos completos de la membresía
+ */
+export const getCompletoById = async (id) => {
+  const response = await api.get(`${ENDPOINT}/${id}/completo`);
+  // Si la respuesta tiene un campo 'data', extraerlo, sino devolver la respuesta completa
+  return response?.data || response;
+};
+
+/**
  * Crea una nueva membresía (y automáticamente crea un pago asociado)
  * @param {object} data - Datos de la membresía a crear
  * @returns {Promise} - Membresía creada
@@ -71,7 +88,9 @@ export const create = async (data) => {
  * @returns {Promise} - Membresía actualizada
  */
 export const update = async (id, data) => {
-  return await api.put(`${ENDPOINT}/${id}`, data);
+  const response = await api.put(`${ENDPOINT}/${id}`, data);
+  // Si la respuesta tiene un campo 'data', extraerlo, sino devolver la respuesta completa
+  return response?.data || response;
 };
 
 /**
@@ -88,6 +107,7 @@ const membresiasService = {
   getAll,
   getByAlumno,
   getById,
+  getCompletoById,
   create,
   update,
   deleteById,
