@@ -55,31 +55,83 @@ async function request(endpoint, options = {}) {
 }
 
 /**
+ * Limpia un objeto para asegurar que solo contenga datos serializables
+ * Elimina funciones, elementos del DOM, y referencias circulares
+ */
+const cleanForSerialization = (obj) => {
+  if (obj === null || obj === undefined) {
+    return obj;
+  }
+  
+  // Si es un valor primitivo, retornarlo tal cual
+  if (typeof obj !== 'object') {
+    return obj;
+  }
+  
+  // Si es una fecha, convertirla a string
+  if (obj instanceof Date) {
+    return obj.toISOString();
+  }
+  
+  // Si es un array, limpiar cada elemento
+  if (Array.isArray(obj)) {
+    return obj.map(cleanForSerialization);
+  }
+  
+  // Si es un objeto, limpiar cada propiedad
+  const cleaned = {};
+  for (const key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      const value = obj[key];
+      // Saltar funciones y elementos del DOM
+      if (typeof value === 'function') {
+        continue;
+      }
+      if (value instanceof HTMLElement || value instanceof Event) {
+        continue;
+      }
+      // Saltar propiedades que empiezan con __ (propiedades internas de React)
+      if (key.startsWith('__')) {
+        continue;
+      }
+      cleaned[key] = cleanForSerialization(value);
+    }
+  }
+  return cleaned;
+};
+
+/**
  * Métodos HTTP helpers
  */
 export const api = {
   get: (endpoint, options = {}) => request(endpoint, { ...options, method: 'GET' }),
   
-  post: (endpoint, data, options = {}) => 
-    request(endpoint, {
+  post: (endpoint, data, options = {}) => {
+    const cleanedData = cleanForSerialization(data);
+    return request(endpoint, {
       ...options,
       method: 'POST',
-      body: JSON.stringify(data),
-    }),
+      body: JSON.stringify(cleanedData),
+    });
+  },
   
-  put: (endpoint, data, options = {}) => 
-    request(endpoint, {
+  put: (endpoint, data, options = {}) => {
+    const cleanedData = cleanForSerialization(data);
+    return request(endpoint, {
       ...options,
       method: 'PUT',
-      body: JSON.stringify(data),
-    }),
+      body: JSON.stringify(cleanedData),
+    });
+  },
   
-  patch: (endpoint, data, options = {}) => 
-    request(endpoint, {
+  patch: (endpoint, data, options = {}) => {
+    const cleanedData = cleanForSerialization(data);
+    return request(endpoint, {
       ...options,
       method: 'PATCH',
-      body: JSON.stringify(data),
-    }),
+      body: JSON.stringify(cleanedData),
+    });
+  },
   
   delete: (endpoint, options = {}) => 
     request(endpoint, { ...options, method: 'DELETE' }),
