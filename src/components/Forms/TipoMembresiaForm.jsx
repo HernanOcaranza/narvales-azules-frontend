@@ -15,6 +15,7 @@ function TipoMembresiaForm({ onSuccess, onCancel, initialData = null }) {
     initialData || {
       tipo_membrecia: '',
       frecuencia_semanal: '',
+      duracion_dias: '',
     }
   );
 
@@ -26,7 +27,9 @@ function TipoMembresiaForm({ onSuccess, onCancel, initialData = null }) {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: name === 'frecuencia_semanal' ? (value === '' ? '' : Number(value)) : value,
+      [name]: name === 'frecuencia_semanal' || name === 'duracion_dias' 
+        ? (value === '' ? '' : Number(value)) 
+        : value,
     }));
     if (errors[name]) {
       setErrors((prev) => ({
@@ -48,6 +51,12 @@ function TipoMembresiaForm({ onSuccess, onCancel, initialData = null }) {
     if (formData.frecuencia_semanal !== '' && formData.frecuencia_semanal !== null) {
       if (formData.frecuencia_semanal < 0) {
         newErrors.frecuencia_semanal = 'La frecuencia semanal debe ser mayor o igual a 0';
+      }
+    }
+
+    if (formData.duracion_dias !== '' && formData.duracion_dias !== null) {
+      if (formData.duracion_dias <= 0) {
+        newErrors.duracion_dias = 'La duración en días debe ser mayor a 0';
       }
     }
 
@@ -117,6 +126,19 @@ function TipoMembresiaForm({ onSuccess, onCancel, initialData = null }) {
           helperText={errors.frecuencia_semanal || 'Número de veces por semana (opcional)'}
           inputProps={{ min: 0 }}
           placeholder="Ej: 2, 3, 4"
+        />
+
+        <TextField
+          label="Duración (días)"
+          name="duracion_dias"
+          type="number"
+          value={formData.duracion_dias}
+          onChange={handleChange}
+          fullWidth
+          error={!!errors.duracion_dias}
+          helperText={errors.duracion_dias || 'Duración de la membresía en días (opcional). Ej: 30 para mensual, 15 para quincenal, 7 para semanal'}
+          inputProps={{ min: 1 }}
+          placeholder="Ej: 30, 15, 7"
         />
 
         <Stack direction="row" spacing={2} sx={{ pt: 2, justifyContent: 'flex-end' }}>

@@ -20,14 +20,9 @@ import * as grupoService from '../../services/grupoService';
 import TipoMembreciaSelector from './TipoMembreciaSelector';
 import DetallesPagoManager from './DetallesPagoManager';
 import { validateMembrecia, validateDetallePago } from '../../utils/validators';
+import { formatDateForInput, getTodayLocalDate } from '../../utils/helpers';
 
 function MembreciaForm({ onSuccess, onCancel, initialData = null }) {
-  const formatDateForInput = (date) => {
-    if (!date) return '';
-    const d = new Date(date);
-    if (isNaN(d.getTime())) return '';
-    return d.toISOString().split('T')[0];
-  };
 
   const [formData, setFormData] = React.useState(() => {
     if (initialData) {
@@ -41,7 +36,6 @@ function MembreciaForm({ onSuccess, onCancel, initialData = null }) {
       return {
         ...initialData,
         fecha_inicio: formatDateForInput(initialData.fecha_inicio),
-        fecha_fin: formatDateForInput(initialData.fecha_fin),
         detallesPago: detallesPago,
         fecha_pago: formatDateForInput(initialData.pago?.fecha_pago),
         observaciones_pago: initialData.pago?.observaciones || '',
@@ -51,11 +45,10 @@ function MembreciaForm({ onSuccess, onCancel, initialData = null }) {
       id_alumno: null,
       id_tipo_membrecia: null,
       id_grupo: null,
-      fecha_inicio: new Date().toISOString().split('T')[0],
-      fecha_fin: '',
+      fecha_inicio: getTodayLocalDate(),
       estado: 'activa',
       detallesPago: [],
-      fecha_pago: new Date().toISOString().split('T')[0],
+      fecha_pago: getTodayLocalDate(),
       observaciones_pago: '',
     };
   });
@@ -72,7 +65,6 @@ function MembreciaForm({ onSuccess, onCancel, initialData = null }) {
         ...prev,
         ...initialData,
         fecha_inicio: formatDateForInput(initialData.fecha_inicio),
-        fecha_fin: formatDateForInput(initialData.fecha_fin),
         detallesPago: detallesPago,
         fecha_pago: formatDateForInput(initialData.pago?.fecha_pago) || prev.fecha_pago,
         observaciones_pago: initialData.pago?.observaciones || prev.observaciones_pago,
@@ -163,12 +155,14 @@ function MembreciaForm({ onSuccess, onCancel, initialData = null }) {
     setError('');
 
     // Validar datos de membresía (sin pago)
+    // fecha_fin se calcula automáticamente en el backend
+    // No enviamos fecha_fin para que el backend la calcule automáticamente
     const membresiaData = {
       id_alumno: formData.id_alumno,
       id_tipo_membrecia: formData.id_tipo_membrecia,
       id_grupo: formData.id_grupo,
       fecha_inicio: formData.fecha_inicio,
-      fecha_fin: formData.fecha_fin || undefined,
+      // fecha_fin no se envía - el backend la calculará automáticamente basándose en duracion_dias
       estado: formData.estado,
     };
 
@@ -311,19 +305,7 @@ function MembreciaForm({ onSuccess, onCancel, initialData = null }) {
           required
           fullWidth
           error={!!errors.fecha_inicio}
-          helperText={errors.fecha_inicio}
-          InputLabelProps={{ shrink: true }}
-        />
-
-        <TextField
-          label="Fecha de Fin (Opcional)"
-          name="fecha_fin"
-          type="date"
-          value={formData.fecha_fin}
-          onChange={(e) => handleChange('fecha_fin', e.target.value)}
-          fullWidth
-          error={!!errors.fecha_fin}
-          helperText={errors.fecha_fin}
+          helperText={errors.fecha_inicio || 'La fecha de fin se calculará automáticamente según el tipo de membresía'}
           InputLabelProps={{ shrink: true }}
         />
 

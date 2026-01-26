@@ -19,16 +19,10 @@ import {
   Delete as DeleteIcon,
   AttachMoney as AttachMoneyIcon,
 } from '@mui/icons-material';
-import { formatCurrency } from '../../utils/helpers';
+import { formatCurrency, formatDateForInput, getTodayLocalDate } from '../../utils/helpers';
 import { validateDetallePago } from '../../utils/validators';
 
 function DetallesPagoManager({ detalles = [], onChange, errors = {} }) {
-  const formatDateForInput = (date) => {
-    if (!date) return new Date().toISOString().split('T')[0];
-    const d = new Date(date);
-    if (isNaN(d.getTime())) return new Date().toISOString().split('T')[0];
-    return d.toISOString().split('T')[0];
-  };
 
   const [localDetalles, setLocalDetalles] = React.useState(() => {
     if (!detalles || !Array.isArray(detalles)) return [];
@@ -70,7 +64,7 @@ function DetallesPagoManager({ detalles = [], onChange, errors = {} }) {
     const nuevoDetalle = {
       metodo_pago: '',
       monto_parcial: '',
-      fecha_detalle: new Date().toISOString().split('T')[0],
+      fecha_detalle: getTodayLocalDate(),
       referencia_transferencia: '',
     };
     const updated = [...localDetalles, nuevoDetalle];
@@ -104,7 +98,7 @@ function DetallesPagoManager({ detalles = [], onChange, errors = {} }) {
     }
   };
 
-  const validateDetalle = (detalle, index) => {
+  const validateDetalle = (detalle) => {
     return validateDetallePago(detalle);
   };
 

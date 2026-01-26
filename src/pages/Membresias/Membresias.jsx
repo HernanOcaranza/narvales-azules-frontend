@@ -22,6 +22,7 @@ import MembreciaForm from '../../components/membresias/MembreciaForm';
 import MembreciaDetailsModal from '../../components/membresias/MembreciaDetailsModal';
 import MembresiasFilters from '../../components/membresias/MembresiasFilters';
 import ConfirmDeleteDialog from '../../components/Dialogs/ConfirmDeleteDialog';
+import { getTodayLocalDate } from '../../utils/helpers';
 
 function Membresias() {
   const theme = useTheme();
@@ -225,7 +226,7 @@ function Membresias() {
         id_alumno: membresia.id_alumno,
         id_tipo_membrecia: membresia.id_tipo_membrecia,
         id_grupo: membresia.id_grupo,
-        fecha_inicio: new Date().toISOString().split('T')[0],
+        fecha_inicio: getTodayLocalDate(),
         fecha_fin: '',
         estado: 'activa',
       };

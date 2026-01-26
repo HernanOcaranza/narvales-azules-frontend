@@ -14,14 +14,9 @@ import {
 import { Save as SaveIcon } from '@mui/icons-material';
 import * as precioMembresiasService from '../../services/precioMembresiasService';
 import * as tipoMembresiasService from '../../services/tipoMembresiasService';
+import { formatDateForInput, getTodayLocalDate } from '../../utils/helpers';
 
 function PrecioMembresiaForm({ onSuccess, onCancel, initialData = null }) {
-  const formatDateForInput = (date) => {
-    if (!date) return '';
-    const d = new Date(date);
-    if (isNaN(d.getTime())) return '';
-    return d.toISOString().split('T')[0];
-  };
 
   const [formData, setFormData] = React.useState(() => {
     if (initialData) {
@@ -35,7 +30,7 @@ function PrecioMembresiaForm({ onSuccess, onCancel, initialData = null }) {
     return {
       id_tipo_membrecia: '',
       precio: '',
-      fecha_inicio_vigencia: new Date().toISOString().split('T')[0],
+      fecha_inicio_vigencia: getTodayLocalDate(),
       fecha_fin_vigencia: '',
     };
   });

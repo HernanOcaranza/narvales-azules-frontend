@@ -150,6 +150,11 @@ function TipoMembresias() {
                       Frecuencia semanal: {tipo.frecuencia_semanal} veces
                     </Typography>
                   )}
+                  {tipo.duracion_dias !== null && tipo.duracion_dias !== undefined && (
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      Duración: {tipo.duracion_dias} días
+                    </Typography>
+                  )}
                   <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
                     <IconButton
                       size="small"
@@ -179,6 +184,7 @@ function TipoMembresias() {
                 <TableCell>ID</TableCell>
                 <TableCell>Tipo de Membresía</TableCell>
                 <TableCell>Frecuencia Semanal</TableCell>
+                <TableCell>Duración (días)</TableCell>
                 <TableCell>Descripción</TableCell>
                 <TableCell align="right">Acciones</TableCell>
               </TableRow>
@@ -186,7 +192,7 @@ function TipoMembresias() {
             <TableBody>
               {tipos.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} align="center">
+                  <TableCell colSpan={6} align="center">
                     <Typography variant="body1" color="text.secondary" p={2}>
                       No hay tipos de membresía registrados
                     </Typography>
@@ -202,6 +208,7 @@ function TipoMembresias() {
                       </Typography>
                     </TableCell>
                     <TableCell>{tipo.frecuencia_semanal !== null && tipo.frecuencia_semanal !== undefined ? tipo.frecuencia_semanal : '-'}</TableCell>
+                    <TableCell>{tipo.duracion_dias !== null && tipo.duracion_dias !== undefined ? tipo.duracion_dias : '-'}</TableCell>
                     <TableCell>-</TableCell>
                     <TableCell align="right">
                       <Stack direction="row" spacing={1} justifyContent="flex-end">

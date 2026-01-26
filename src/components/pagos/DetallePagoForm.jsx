@@ -12,14 +12,9 @@ import {
 } from '@mui/material';
 import { Save as SaveIcon } from '@mui/icons-material';
 import { validateDetallePago } from '../../utils/validators';
+import { formatDateForInput, getTodayLocalDate } from '../../utils/helpers';
 
 function DetallePagoForm({ onSuccess, onCancel, initialData = null, pagoId }) {
-  const formatDateForInput = (date) => {
-    if (!date) return new Date().toISOString().split('T')[0];
-    const d = new Date(date);
-    if (isNaN(d.getTime())) return new Date().toISOString().split('T')[0];
-    return d.toISOString().split('T')[0];
-  };
 
   const [formData, setFormData] = React.useState(() => {
     if (initialData) {
@@ -32,7 +27,7 @@ function DetallePagoForm({ onSuccess, onCancel, initialData = null, pagoId }) {
     return {
       metodo_pago: '',
       monto_parcial: '',
-      fecha_detalle: new Date().toISOString().split('T')[0],
+      fecha_detalle: getTodayLocalDate(),
       referencia_transferencia: '',
       id_pago: pagoId,
     };

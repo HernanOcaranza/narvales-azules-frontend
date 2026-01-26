@@ -10,7 +10,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useTipoMembresias } from '../../hooks/useTipoMembresias';
-import { formatCurrency } from '../../utils/helpers';
+import { formatCurrency, formatDate } from '../../utils/helpers';
 
 function TipoMembreciaSelector({ value, onChange, error, required = true }) {
   const { tipos, loading, fetchTipos, getPrecioVigente } = useTipoMembresias();
@@ -86,7 +86,7 @@ function TipoMembreciaSelector({ value, onChange, error, required = true }) {
               <Typography variant="body2">
                 <strong>Precio vigente:</strong> {formatCurrency(precioVigente.precio || precioVigente.monto || 0)}
                 {(precioVigente.fecha_inicio_vigencia || precioVigente.fecha_inicio) && (
-                  <span> (Vigente desde {new Date(precioVigente.fecha_inicio_vigencia || precioVigente.fecha_inicio).toLocaleDateString()})</span>
+                  <span> (Vigente desde {formatDate(precioVigente.fecha_inicio_vigencia || precioVigente.fecha_inicio)})</span>
                 )}
               </Typography>
             </Alert>

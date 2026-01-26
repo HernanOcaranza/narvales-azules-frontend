@@ -47,7 +47,10 @@ import * as alumnoService from '../../services/alumnoService';
 import * as tutorService from '../../services/tutorService';
 import AlumnoForm from '../../components/Forms/AlumnoForm';
 import ConfirmDeleteDialog from '../../components/Dialogs/ConfirmDeleteDialog';
+import EstadoMembresiaBadge from '../../components/EstadoMembresiaBadge/EstadoMembresiaBadge';
+import FiltrosAlumnos from '../../components/FiltrosAlumnos/FiltrosAlumnos';
 import { formatDate, formatCurrency } from '../../utils/helpers';
+import { filtrarAlumnosPorEstado, ordenarAlumnosPorEstado } from '../../utils/membresiaHelpers';
 
 function Alumnos() {
   const [alumnos, setAlumnos] = React.useState([]);
@@ -62,6 +65,8 @@ function Alumnos() {
   const [loadingAlumnoCompleto, setLoadingAlumnoCompleto] = React.useState(false);
   const [alumnoCompleto, setAlumnoCompleto] = React.useState(null);
   const [errorAlumnoCompleto, setErrorAlumnoCompleto] = React.useState(null);
+  const [estadosFiltro, setEstadosFiltro] = React.useState([]);
+  const [ordenEstado, setOrdenEstado] = React.useState('asc');
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
@@ -183,11 +188,31 @@ function Alumnos() {
     return certificado === 1 ? 'Sí' : 'No';
   };
 
-  const filteredAlumnos = alumnos.filter((alumno) =>
-    Object.values(alumno).some((value) =>
-      String(value).toLowerCase().includes(searchText.toLowerCase())
-    )
-  );
+  // Filtrar y ordenar alumnos
+  const filteredAlumnos = React.useMemo(() => {
+    let result = [...alumnos];
+
+    // Filtrar por búsqueda de texto
+    if (searchText) {
+      result = result.filter((alumno) =>
+        Object.values(alumno).some((value) =>
+          String(value).toLowerCase().includes(searchText.toLowerCase())
+        )
+      );
+    }
+
+    // Filtrar por estado de membresía
+    if (estadosFiltro.length > 0) {
+      result = filtrarAlumnosPorEstado(result, estadosFiltro);
+    }
+
+    // Ordenar por estado de membresía
+    if (ordenEstado) {
+      result = ordenarAlumnosPorEstado(result, ordenEstado);
+    }
+
+    return result;
+  }, [alumnos, searchText, estadosFiltro, ordenEstado]);
 
   return (
     <Box>
@@ -224,6 +249,15 @@ function Alumnos() {
           Nuevo Alumno
         </Button>
       </Box>
+
+      {/* Filtros de membresía */}
+      <FiltrosAlumnos
+        alumnos={alumnos}
+        estadosSeleccionados={estadosFiltro}
+        onEstadosChange={setEstadosFiltro}
+        orden={ordenEstado}
+        onOrdenChange={setOrdenEstado}
+      />
 
       {loading ? (
         <Box display="flex" justifyContent="center" p={4}>
@@ -269,12 +303,13 @@ function Alumnos() {
                       <CancelIcon sx={{ ml: 0.5, fontSize: 16, color: 'error.main', verticalAlign: 'middle' }} />
                     )}
                   </Typography>
-                  <Box sx={{ mt: 1, mb: 1 }}>
+                  <Box sx={{ mt: 1, mb: 1, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                     <Chip
                       label={getEstadoLabel(alumno.estado)}
                       color={getEstadoColor(alumno.estado)}
                       size="small"
                     />
+                    <EstadoMembresiaBadge alumno={alumno} size="small" />
                   </Box>
                   <Box sx={{ mt: 2, display: 'flex', gap: 1 }} onClick={(e) => e.stopPropagation()}>
                     <IconButton size="small" color="primary" onClick={() => handleOpenModal(alumno)}>
@@ -304,13 +339,14 @@ function Alumnos() {
                 <TableCell>Condición</TableCell>
                 <TableCell>Certificado</TableCell>
                 <TableCell>Estado</TableCell>
+                <TableCell>Estado Membresía</TableCell>
                 <TableCell align="right">Acciones</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {filteredAlumnos.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={11} align="center">
+                  <TableCell colSpan={12} align="center">
                     <Typography variant="body1" color="text.secondary" p={2}>
                       No hay alumnos registrados
                     </Typography>
@@ -359,6 +395,9 @@ function Alumnos() {
                         color={getEstadoColor(alumno.estado)}
                         size="small"
                       />
+                    </TableCell>
+                    <TableCell>
+                      <EstadoMembresiaBadge alumno={alumno} size="small" />
                     </TableCell>
                     <TableCell align="right" onClick={(e) => e.stopPropagation()}>
                       <Stack direction="row" spacing={1} justifyContent="flex-end">

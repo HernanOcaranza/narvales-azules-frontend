@@ -13,15 +13,9 @@ import {
 } from '@mui/material';
 import { Save as SaveIcon } from '@mui/icons-material';
 import * as empleadoService from '../../services/empleadoService';
+import { formatDateForInput, getTodayLocalDate } from '../../utils/helpers';
 
 function EmpleadoForm({ onSuccess, onCancel, initialData = null }) {
-  // Función para formatear fecha a YYYY-MM-DD para input type="date"
-  const formatDateForInput = (date) => {
-    if (!date) return new Date().toISOString().split('T')[0];
-    const d = new Date(date);
-    if (isNaN(d.getTime())) return new Date().toISOString().split('T')[0];
-    return d.toISOString().split('T')[0];
-  };
 
   // Estados del formulario
   const [formData, setFormData] = React.useState(() => {
@@ -40,7 +34,7 @@ function EmpleadoForm({ onSuccess, onCancel, initialData = null }) {
       apellido: '',
       dni: '',
       telefono: '',
-      fecha_alta: new Date().toISOString().split('T')[0], // Fecha actual por defecto
+      fecha_alta: getTodayLocalDate(), // Fecha actual por defecto
       estado: 1,
     };
   });

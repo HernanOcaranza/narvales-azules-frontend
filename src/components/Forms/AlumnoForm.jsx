@@ -24,15 +24,9 @@ import * as tutorService from '../../services/tutorService';
 import * as categoriaService from '../../services/categoriaService';
 import * as condicionService from '../../services/condicionService';
 import TutorForm from './TutorForm';
+import { formatDateForInput, getTodayLocalDate } from '../../utils/helpers';
 
 function AlumnoForm({ onSuccess, onCancel, initialData = null }) {
-  // Función para formatear fecha a YYYY-MM-DD para input type="date"
-  const formatDateForInput = (date) => {
-    if (!date) return '';
-    const d = new Date(date);
-    if (isNaN(d.getTime())) return '';
-    return d.toISOString().split('T')[0];
-  };
 
   // Estados del formulario
   const [formData, setFormData] = React.useState(() => {
@@ -50,7 +44,7 @@ function AlumnoForm({ onSuccess, onCancel, initialData = null }) {
       dni: '',
       fecha_nacimiento: '',
       direccion: '',
-      fecha_registro: new Date().toISOString().split('T')[0],
+      fecha_registro: getTodayLocalDate(),
       estado: 1,
       certificado: 0,
       id_tutor: '',

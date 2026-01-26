@@ -13,14 +13,9 @@ import {
 import { Save as SaveIcon } from '@mui/icons-material';
 import * as empleadoService from '../../services/empleadoService';
 import { validatePago } from '../../utils/validators';
+import { formatDateForInput, getTodayLocalDate } from '../../utils/helpers';
 
 function PagoForm({ onSuccess, onCancel, initialData = null }) {
-  const formatDateForInput = (date) => {
-    if (!date) return new Date().toISOString().split('T')[0];
-    const d = new Date(date);
-    if (isNaN(d.getTime())) return new Date().toISOString().split('T')[0];
-    return d.toISOString().split('T')[0];
-  };
 
   const [formData, setFormData] = React.useState(() => {
     if (initialData) {
@@ -32,7 +27,7 @@ function PagoForm({ onSuccess, onCancel, initialData = null }) {
     }
     return {
       tipo: '',
-      fecha_pago: new Date().toISOString().split('T')[0],
+      fecha_pago: getTodayLocalDate(),
       estado: 'pendiente',
       observaciones: '',
       id_empleado: null,

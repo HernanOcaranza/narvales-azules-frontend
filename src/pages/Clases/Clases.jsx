@@ -112,7 +112,11 @@ function Clases() {
       if (!date) return '';
       const d = new Date(date);
       if (isNaN(d.getTime())) return '';
-      return d.toISOString().split('T')[0];
+      // Usar métodos locales en lugar de UTC para evitar problemas de zona horaria
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
     };
 
     // Formatear hora para el input (HH:MM:SS -> HH:MM)
