@@ -40,6 +40,8 @@ import {
 import * as claseService from '../../services/claseService';
 import { Alert, Snackbar } from '@mui/material';
 import { formatDate } from '../../utils/helpers';
+import Pagination from '../../components/Pagination/Pagination';
+import ClasesFilters from '../../components/clases/ClasesFilters';
 
 function Clases() {
   const [clases, setClases] = React.useState([]);
@@ -51,20 +53,54 @@ function Clases() {
   const [editFormData, setEditFormData] = React.useState({});
   const [editLoading, setEditLoading] = React.useState(false);
   const [editErrors, setEditErrors] = React.useState({});
+  const [pagination, setPagination] = React.useState({ page: 1, limit: 10, total: 0, totalPages: 0 });
+  const [filters, setFilters] = React.useState({
+    idGrupo: '',
+    idDisciplina: '',
+    idCategoria: '',
+    estado: '',
+    fechaDesde: '',
+    fechaHasta: '',
+  });
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   React.useEffect(() => {
-    loadClases();
-  }, []);
+    loadClasesWithParams(pagination.page, pagination.limit);
+  }, [pagination.page, pagination.limit, filters]);
 
-  const loadClases = async () => {
+  const loadClases = () => {
+    loadClasesWithParams(pagination.page, pagination.limit);
+  };
+
+  const handlePageChange = (newPage) => {
+    const newLimit = pagination.limit;
+    setPagination(prev => ({ ...prev, page: newPage }));
+    loadClasesWithParams(newPage, newLimit);
+  };
+
+  const handleLimitChange = (newLimit) => {
+    const limitNum = parseInt(newLimit, 10);
+    setPagination(prev => ({ ...prev, limit: limitNum, page: 1 }));
+    loadClasesWithParams(1, limitNum);
+  };
+
+  const loadClasesWithParams = async (page, limit) => {
     setLoading(true);
     try {
-      const response = await claseService.getAll();
-      // Asegurar que siempre sea un array
-      const data = Array.isArray(response) ? response : [];
-      setClases(data);
+      const filtrosBackend = {};
+      if (filters.idGrupo) filtrosBackend.idGrupo = parseInt(filters.idGrupo);
+      if (filters.idDisciplina) filtrosBackend.idDisciplina = parseInt(filters.idDisciplina);
+      if (filters.idCategoria) filtrosBackend.idCategoria = parseInt(filters.idCategoria);
+      if (filters.estado) filtrosBackend.estado = filters.estado;
+      if (filters.fechaDesde) filtrosBackend.fechaDesde = filters.fechaDesde;
+      if (filters.fechaHasta) filtrosBackend.fechaHasta = filters.fechaHasta;
+
+      const result = await claseService.getAll({ page, limit, filters: filtrosBackend });
+      const response = result?.data?.data || result?.data || result;
+      const pagInfo = result?.data?.pagination || result?.pagination || { page: 1, limit: 10, total: 0, totalPages: 0 };
+      setClases(Array.isArray(response) ? response : []);
+      setPagination(prev => ({ ...prev, ...pagInfo }));
     } catch (error) {
       console.error('Error al cargar clases:', error);
       setClases([]);
@@ -337,6 +373,17 @@ function Clases() {
     return 'default';
   };
 
+  const handleClearFilters = () => {
+    setFilters({
+      idGrupo: '',
+      idDisciplina: '',
+      idCategoria: '',
+      estado: '',
+      fechaDesde: '',
+      fechaHasta: '',
+    });
+  };
+
   return (
     <Box>
       <Box
@@ -356,106 +403,127 @@ function Clases() {
         </Button>
       </Box>
 
+      <ClasesFilters
+        filters={filters}
+        onFilterChange={setFilters}
+onClearFilters={handleClearFilters}
+      />
+
       {loading ? (
         <Box display="flex" justifyContent="center" p={4}>
           <CircularProgress />
         </Box>
       ) : isMobile ? (
-        <Stack spacing={2}>
-          {clases.length === 0 ? (
-            <Typography variant="body1" color="text.secondary" textAlign="center" p={4}>
-              No hay clases registradas
-            </Typography>
-          ) : (
-            clases.map((clase) => (
-              <Card key={clase.id_clase || clase.id}>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom>
-                    {getGrupoNombre(clase)}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Fecha: {formatDate(clase.fecha_clase)}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Horario: {getHorario(clase)}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Capacidad: {getInscriptos(clase)}/{getCapacidad(clase)}
-                  </Typography>
-                  <Box sx={{ mt: 1, mb: 1 }}>
-                    <Chip
-                      label={getEstado(clase)}
-                      color={getEstadoColor(clase)}
-                      size="small"
-                    />
-                  </Box>
-                  <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
-                    <IconButton size="small" color="primary" onClick={() => handleOpenEditDialog(clase)}>
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton size="small" color="primary" onClick={() => handleOpenDetailDialog(clase)}>
-                      <VisibilityIcon />
-                    </IconButton>
-                  </Box>
-                </CardContent>
-              </Card>
-            ))
-          )}
-        </Stack>
-      ) : (
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Grupo</TableCell>
-                <TableCell>Fecha</TableCell>
-                <TableCell>Horario</TableCell>
-                <TableCell>Capacidad</TableCell>
-                <TableCell>Inscriptos</TableCell>
-                <TableCell>Estado</TableCell>
-                <TableCell align="right">Acciones</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {clases.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} align="center">
-                    <Typography variant="body1" color="text.secondary" p={2}>
-                      No hay clases registradas
+        <>
+          <Stack spacing={2}>
+            {clases.length === 0 ? (
+              <Typography variant="body1" color="text.secondary" textAlign="center" p={4}>
+                No hay clases registradas
+              </Typography>
+            ) : (
+              clases.map((clase) => (
+                <Card key={clase.id_clase || clase.id}>
+                  <CardContent>
+                    <Typography variant="h6" gutterBottom>
+                      {getGrupoNombre(clase)}
                     </Typography>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                clases.map((clase) => (
-                  <TableRow key={clase.id_clase || clase.id} hover>
-                    <TableCell>{getGrupoNombre(clase)}</TableCell>
-                    <TableCell>{formatDate(clase.fecha_clase)}</TableCell>
-                    <TableCell>{getHorario(clase)}</TableCell>
-                    <TableCell>{getCapacidad(clase)}</TableCell>
-                    <TableCell>{getInscriptos(clase)}</TableCell>
-                    <TableCell>
+                    <Typography variant="body2" color="text.secondary">
+                      Fecha: {formatDate(clase.fecha_clase)}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Horario: {getHorario(clase)}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Capacidad: {getInscriptos(clase)}/{getCapacidad(clase)}
+                    </Typography>
+                    <Box sx={{ mt: 1, mb: 1 }}>
                       <Chip
                         label={getEstado(clase)}
                         color={getEstadoColor(clase)}
                         size="small"
                       />
-                    </TableCell>
-                    <TableCell align="right">
-                      <Stack direction="row" spacing={1} justifyContent="flex-end">
-                        <IconButton size="small" color="primary" onClick={() => handleOpenEditDialog(clase)}>
-                          <EditIcon />
-                        </IconButton>
-                        <IconButton size="small" color="primary" onClick={() => handleOpenDetailDialog(clase)}>
-                          <VisibilityIcon />
-                        </IconButton>
-                      </Stack>
+                    </Box>
+                    <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
+                      <IconButton size="small" color="primary" onClick={() => handleOpenEditDialog(clase)}>
+                        <EditIcon />
+                      </IconButton>
+                      <IconButton size="small" color="primary" onClick={() => handleOpenDetailDialog(clase)}>
+                        <VisibilityIcon />
+                      </IconButton>
+                    </Box>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </Stack>
+          <Pagination
+            pagination={pagination}
+            onPageChange={handlePageChange}
+            onLimitChange={handleLimitChange}
+          />
+        </>
+      ) : (
+        <>
+          <TableContainer component={Paper}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Grupo</TableCell>
+                  <TableCell>Fecha</TableCell>
+                  <TableCell>Horario</TableCell>
+                  <TableCell>Capacidad</TableCell>
+                  <TableCell>Inscriptos</TableCell>
+                  <TableCell>Estado</TableCell>
+                  <TableCell align="right">Acciones</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {clases.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} align="center">
+                      <Typography variant="body1" color="text.secondary" p={2}>
+                        No hay clases registradas
+                      </Typography>
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+                ) : (
+                  clases.map((clase) => (
+                    <TableRow key={clase.id_clase || clase.id} hover>
+                      <TableCell>{getGrupoNombre(clase)}</TableCell>
+                      <TableCell>{formatDate(clase.fecha_clase)}</TableCell>
+                      <TableCell>{getHorario(clase)}</TableCell>
+                      <TableCell>{getCapacidad(clase)}</TableCell>
+                      <TableCell>{getInscriptos(clase)}</TableCell>
+                      <TableCell>
+                        <Chip
+                          label={getEstado(clase)}
+                          color={getEstadoColor(clase)}
+                          size="small"
+                        />
+                      </TableCell>
+                      <TableCell align="right">
+                        <Stack direction="row" spacing={1} justifyContent="flex-end">
+                          <IconButton size="small" color="primary" onClick={() => handleOpenEditDialog(clase)}>
+                            <EditIcon />
+                          </IconButton>
+                          <IconButton size="small" color="primary" onClick={() => handleOpenDetailDialog(clase)}>
+                            <VisibilityIcon />
+                          </IconButton>
+                        </Stack>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+          
+          <Pagination
+            pagination={pagination}
+            onPageChange={handlePageChange}
+            onLimitChange={handleLimitChange}
+          />
+        </>
       )}
 
       {/* Dialog para editar clase */}

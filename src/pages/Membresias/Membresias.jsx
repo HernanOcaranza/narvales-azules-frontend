@@ -22,19 +22,22 @@ import MembreciaForm from '../../components/membresias/MembreciaForm';
 import MembreciaDetailsModal from '../../components/membresias/MembreciaDetailsModal';
 import MembresiasFilters from '../../components/membresias/MembresiasFilters';
 import ConfirmDeleteDialog from '../../components/Dialogs/ConfirmDeleteDialog';
+import Pagination from '../../components/Pagination/Pagination';
 import { getTodayLocalDate } from '../../utils/helpers';
 
 function Membresias() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const { membresias, loading, fetchMembresias, createMembrecia, updateMembrecia, deleteMembrecia, fetchMembreciaById } = useMembresias();
+  const { membresias, loading, pagination, fetchMembresias, createMembrecia, updateMembrecia, deleteMembrecia, fetchMembreciaById } = useMembresias();
   const { tipos, fetchTipos } = useTipoMembresias();
 
   const [filters, setFilters] = React.useState({
     idAlumno: null,
+    idTutor: null,
     estado: null,
     idTipoMembrecia: null,
+    idDisciplina: null,
     idGrupo: null,
     fechaDesde: null,
     fechaHasta: null,
@@ -46,17 +49,27 @@ function Membresias() {
   const [detailDialog, setDetailDialog] = React.useState({ open: false, membresia: null, warning: null });
   const [deleteDialog, setDeleteDialog] = React.useState({ open: false, membresia: null });
   const [snackbar, setSnackbar] = React.useState({ open: false, message: '', severity: 'success' });
+  const [paginationState, setPaginationState] = React.useState({ page: 1, limit: 10 });
 
   React.useEffect(() => {
     fetchTipos();
   }, [fetchTipos]);
 
   React.useEffect(() => {
-    loadMembresias();
-  }, [filters]);
+    loadMembresias(paginationState.page, paginationState.limit);
+  }, [filters, paginationState.page, paginationState.limit]);
 
-  const loadMembresias = async () => {
-    await fetchMembresias(filters);
+  const loadMembresias = async (page, limit) => {
+    await fetchMembresias({ page, limit, ...filters });
+  };
+
+  const handlePageChange = (newPage) => {
+    setPaginationState(prev => ({ ...prev, page: newPage }));
+  };
+
+  const handleLimitChange = (newLimit) => {
+    const limitNum = parseInt(newLimit, 10);
+    setPaginationState(prev => ({ ...prev, limit: limitNum, page: 1 }));
   };
 
   const handleOpenModal = async (membresia = null) => {
@@ -245,8 +258,10 @@ function Membresias() {
   const handleClearFilters = () => {
     setFilters({
       idAlumno: null,
+      idTutor: null,
       estado: null,
       idTipoMembrecia: null,
+      idDisciplina: null,
       idGrupo: null,
       fechaDesde: null,
       fechaHasta: null,
@@ -282,6 +297,12 @@ function Membresias() {
         onDelete={handleDeleteClick}
         onRenew={handleRenew}
         isMobile={isMobile}
+      />
+
+      <Pagination
+        pagination={pagination}
+        onPageChange={handlePageChange}
+        onLimitChange={handleLimitChange}
       />
 
       {/* Modal para crear/editar membresía */}

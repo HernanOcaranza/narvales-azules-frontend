@@ -20,12 +20,13 @@ import PagoForm from '../../components/pagos/PagoForm';
 import PagoDetailsModal from '../../components/pagos/PagoDetailsModal';
 import PagosFilters from '../../components/pagos/PagosFilters';
 import ConfirmDeleteDialog from '../../components/Dialogs/ConfirmDeleteDialog';
+import Pagination from '../../components/Pagination/Pagination';
 
 function Pagos() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const { pagos, loading, fetchPagos, createPago, updatePago, deletePago, fetchPagoById } = usePagos();
+  const { pagos, loading, pagination, fetchPagos, createPago, updatePago, deletePago, fetchPagoById } = usePagos();
 
   const [filters, setFilters] = React.useState({
     tipo: null,
@@ -40,13 +41,23 @@ function Pagos() {
   const [detailDialog, setDetailDialog] = React.useState({ open: false, pago: null });
   const [deleteDialog, setDeleteDialog] = React.useState({ open: false, pago: null });
   const [snackbar, setSnackbar] = React.useState({ open: false, message: '', severity: 'success' });
+  const [paginationState, setPaginationState] = React.useState({ page: 1, limit: 10 });
 
   React.useEffect(() => {
-    loadPagos();
-  }, [filters]);
+    loadPagos(paginationState.page, paginationState.limit);
+  }, [filters, paginationState.page, paginationState.limit]);
 
-  const loadPagos = async () => {
-    await fetchPagos(filters);
+  const loadPagos = async (page, limit) => {
+    await fetchPagos({ page, limit, ...filters });
+  };
+
+  const handlePageChange = (newPage) => {
+    setPaginationState(prev => ({ ...prev, page: newPage }));
+  };
+
+  const handleLimitChange = (newLimit) => {
+    const limitNum = parseInt(newLimit, 10);
+    setPaginationState(prev => ({ ...prev, limit: limitNum, page: 1 }));
   };
 
   const handleOpenModal = (pago = null) => {
@@ -153,6 +164,12 @@ function Pagos() {
         onEdit={handleOpenModal}
         onDelete={handleDeleteClick}
         isMobile={isMobile}
+      />
+
+      <Pagination
+        pagination={pagination}
+        onPageChange={handlePageChange}
+        onLimitChange={handleLimitChange}
       />
 
       {/* Modal para crear/editar pago */}

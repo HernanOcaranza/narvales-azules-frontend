@@ -9,17 +9,22 @@ export function useMembresias() {
   const [membresias, setMembresias] = React.useState([]);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState(null);
+  const [pagination, setPagination] = React.useState({ page: 1, limit: 10, total: 0, totalPages: 0 });
 
   /**
-   * Obtiene todas las membresías con filtros opcionales
-   * @param {object} filters - Filtros (idAlumno, estado, idTipoMembrecia, idGrupo, fechaDesde, fechaHasta)
+   * Obtiene todas las membresías con filtros y paginación
+   * @param {object} options - Opciones (page, limit, filters)
    */
-  const fetchMembresias = React.useCallback(async (filters = {}) => {
+  const fetchMembresias = React.useCallback(async (options = {}) => {
+    const { page = 1, limit = 10, ...filters } = options;
     setLoading(true);
     setError(null);
     try {
-      const data = await membresiasService.getAll(filters);
+      const result = await membresiasService.getAll({ page, limit, ...filters });
+      const data = result?.data?.data || result?.data || result;
+      const pagInfo = result?.data?.pagination || result?.pagination || { page: 1, limit: 10, total: 0, totalPages: 0 };
       setMembresias(Array.isArray(data) ? data : []);
+      setPagination(pagInfo);
     } catch (err) {
       console.error('Error al obtener membresías:', err);
       setError(err.message || 'Error al cargar las membresías');
@@ -128,6 +133,7 @@ export function useMembresias() {
     membresias,
     loading,
     error,
+    pagination,
     fetchMembresias,
     fetchMembresiasByAlumno,
     fetchMembreciaById,

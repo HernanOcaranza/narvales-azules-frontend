@@ -8,13 +8,27 @@ import api from './api';
 const ENDPOINT = '/alumnos';
 
 /**
- * Obtiene todos los alumnos
- * @returns {Promise} - Lista de alumnos
+ * Obtiene todos los alumnos con paginación opcional y filtros
+ * @param {object} options - Opciones de paginación y filtros
+ * @param {number} options.page - Número de página (default: 1)
+ * @param {number} options.limit - Registros por página (default: 10)
+ * @param {object} options.filters - Filtros a aplicar
+ * @returns {Promise} - Lista de alumnos con información de paginación
  */
-export const getAll = async () => {
-  const response = await api.get(ENDPOINT);
-  // Si la respuesta tiene un campo 'data', extraerlo, sino devolver la respuesta completa
-  return response?.data || response;
+export const getAll = async (options = {}) => {
+  const { page = 1, limit = 10, filters = {} } = options;
+  
+  const params = { page, limit };
+  
+  if (filters.idTutor) params.idTutor = filters.idTutor;
+  if (filters.idCategoria) params.idCategoria = filters.idCategoria;
+  if (filters.idCondicion) params.idCondicion = filters.idCondicion;
+  if (filters.estado) params.estado = filters.estado;
+  if (filters.certificado) params.certificado = filters.certificado;
+  
+  const response = await api.get(ENDPOINT, { params });
+  const result = response?.data || response;
+  return result;
 };
 
 /**

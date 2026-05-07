@@ -9,17 +9,22 @@ export function usePagos() {
   const [pagos, setPagos] = React.useState([]);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState(null);
+  const [pagination, setPagination] = React.useState({ page: 1, limit: 10, total: 0, totalPages: 0 });
 
   /**
-   * Obtiene todos los pagos con filtros opcionales
-   * @param {object} filters - Filtros (tipo, fechaDesde, fechaHasta, estado, observaciones)
+   * Obtiene todos los pagos con filtros y paginación
+   * @param {object} options - Opciones (page, limit, filters)
    */
-  const fetchPagos = React.useCallback(async (filters = {}) => {
+  const fetchPagos = React.useCallback(async (options = {}) => {
+    const { page = 1, limit = 10, ...filters } = options;
     setLoading(true);
     setError(null);
     try {
-      const data = await pagosService.getAll(filters);
+      const result = await pagosService.getAll({ page, limit, ...filters });
+      const data = result?.data?.data || result?.data || result;
+      const pagInfo = result?.data?.pagination || result?.pagination || { page: 1, limit: 10, total: 0, totalPages: 0 };
       setPagos(Array.isArray(data) ? data : []);
+      setPagination(pagInfo);
     } catch (err) {
       console.error('Error al obtener pagos:', err);
       setError(err.message || 'Error al cargar los pagos');
@@ -109,6 +114,7 @@ export function usePagos() {
     pagos,
     loading,
     error,
+    pagination,
     fetchPagos,
     fetchPagoById,
     createPago,

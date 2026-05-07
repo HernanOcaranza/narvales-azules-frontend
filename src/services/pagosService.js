@@ -8,12 +8,19 @@ import api from './api';
 const ENDPOINT = '/pagos';
 
 /**
- * Obtiene todos los pagos
- * @param {object} filters - Filtros opcionales (tipo, fechaDesde, fechaHasta, estado, observaciones)
- * @returns {Promise} - Lista de pagos
+ * Obtiene todos los pagos con paginación y filtros
+ * @param {object} options - Opciones de paginación y filtros
+ * @param {number} options.page - Número de página (default: 1)
+ * @param {number} options.limit - Registros por página (default: 10)
+ * @param {object} options.filters - Filtros opcionales (tipo, fechaDesde, fechaHasta, estado, observaciones)
+ * @returns {Promise} - Lista de pagos con información de paginación
  */
-export const getAll = async (filters = {}) => {
+export const getAll = async (options = {}) => {
+  const { page = 1, limit = 10, ...filters } = options;
   const params = new URLSearchParams();
+  
+  params.append('page', page);
+  params.append('limit', limit);
   
   if (filters.tipo) {
     params.append('tipo', filters.tipo);
@@ -31,10 +38,7 @@ export const getAll = async (filters = {}) => {
     params.append('observaciones', filters.observaciones);
   }
   
-  const queryString = params.toString();
-  const url = queryString ? `${ENDPOINT}?${queryString}` : ENDPOINT;
-  
-  const response = await api.get(url);
+  const response = await api.get(`${ENDPOINT}?${params.toString()}`);
   return response?.data || response;
 };
 

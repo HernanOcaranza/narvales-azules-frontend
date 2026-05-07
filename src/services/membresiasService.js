@@ -8,12 +8,19 @@ import api from './api';
 const ENDPOINT = '/membresias';
 
 /**
- * Obtiene todas las membresías
- * @param {object} filters - Filtros opcionales (idAlumno, estado, idTipoMembrecia, idGrupo, fechaDesde, fechaHasta)
- * @returns {Promise} - Lista de membresías
+ * Obtiene todas las membresías con paginación y filtros
+ * @param {object} options - Opciones de paginación y filtros
+ * @param {number} options.page - Número de página (default: 1)
+ * @param {number} options.limit - Registros por página (default: 10)
+ * @param {object} options.filters - Filtros opcionales (idAlumno, estado, idTipoMembrecia, idGrupo, fechaDesde, fechaHasta)
+ * @returns {Promise} - Lista de membresías con información de paginación
  */
-export const getAll = async (filters = {}) => {
+export const getAll = async (options = {}) => {
+  const { page = 1, limit = 10, ...filters } = options;
   const params = new URLSearchParams();
+  
+  params.append('page', page);
+  params.append('limit', limit);
   
   if (filters.idAlumno) {
     params.append('idAlumno', filters.idAlumno);
@@ -34,10 +41,7 @@ export const getAll = async (filters = {}) => {
     params.append('fechaHasta', filters.fechaHasta);
   }
   
-  const queryString = params.toString();
-  const url = queryString ? `${ENDPOINT}?${queryString}` : ENDPOINT;
-  
-  const response = await api.get(url);
+  const response = await api.get(`${ENDPOINT}?${params.toString()}`);
   return response?.data || response;
 };
 

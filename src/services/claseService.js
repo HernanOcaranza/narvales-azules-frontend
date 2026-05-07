@@ -8,12 +8,26 @@ import api from './api';
 const ENDPOINT = '/clases';
 
 /**
- * Obtiene todas las clases
- * @returns {Promise} - Lista de clases
+ * Obtiene todas las clases con paginación opcional y filtros
+ * @param {object} options - Opciones de paginación y filtros
+ * @param {number} options.page - Número de página (default: 1)
+ * @param {number} options.limit - Registros por página (default: 10)
+ * @param {object} options.filters - Filtros a aplicar
+ * @returns {Promise} - Lista de clases con información de paginación
  */
-export const getAll = async () => {
-  const response = await api.get(ENDPOINT);
-  // Si la respuesta tiene un campo 'data', extraerlo, sino devolver la respuesta completa
+export const getAll = async (options = {}) => {
+  const { page = 1, limit = 10, filters = {} } = options;
+  
+  const params = { page, limit };
+  
+  if (filters.idGrupo) params.idGrupo = filters.idGrupo;
+  if (filters.idDisciplina) params.idDisciplina = filters.idDisciplina;
+  if (filters.idCategoria) params.idCategoria = filters.idCategoria;
+  if (filters.estado) params.estado = filters.estado;
+  if (filters.fechaDesde) params.fechaDesde = filters.fechaDesde;
+  if (filters.fechaHasta) params.fechaHasta = filters.fechaHasta;
+  
+  const response = await api.get(ENDPOINT, { params });
   return response?.data || response;
 };
 

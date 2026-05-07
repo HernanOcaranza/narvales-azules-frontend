@@ -49,6 +49,7 @@ import AlumnoForm from '../../components/Forms/AlumnoForm';
 import ConfirmDeleteDialog from '../../components/Dialogs/ConfirmDeleteDialog';
 import EstadoMembresiaBadge from '../../components/EstadoMembresiaBadge/EstadoMembresiaBadge';
 import FiltrosAlumnos from '../../components/FiltrosAlumnos/FiltrosAlumnos';
+import Pagination from '../../components/Pagination/Pagination';
 import { formatDate, formatCurrency } from '../../utils/helpers';
 import { filtrarAlumnosPorEstado, ordenarAlumnosPorEstado } from '../../utils/membresiaHelpers';
 
@@ -67,25 +68,51 @@ function Alumnos() {
   const [errorAlumnoCompleto, setErrorAlumnoCompleto] = React.useState(null);
   const [estadosFiltro, setEstadosFiltro] = React.useState([]);
   const [ordenEstado, setOrdenEstado] = React.useState('asc');
+  const [filtrosAdicionales, setFiltrosAdicionales] = React.useState({
+    tutor: null,
+    idCategoria: null,
+    idCondicion: null,
+    estado: '',
+    certificado: '',
+  });
+  const [pagination, setPagination] = React.useState({ page: 1, limit: 10, total: 0, totalPages: 0 });
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   React.useEffect(() => {
-    loadAlumnos();
-  }, []);
+    loadAlumnos(pagination.page, pagination.limit);
+  }, [pagination.page, pagination.limit, filtrosAdicionales]);
 
-  const loadAlumnos = async () => {
+  const loadAlumnos = async (page, limit) => {
     setLoading(true);
     try {
-      const data = await alumnoService.getAll();
-      // Asegurar que siempre sea un array
-      setAlumnos(Array.isArray(data) ? data : []);
+      const filtrosBackend = {};
+      if (filtrosAdicionales.tutor?.id_tutor) filtrosBackend.idTutor = filtrosAdicionales.tutor.id_tutor;
+      if (filtrosAdicionales.idCategoria) filtrosBackend.idCategoria = parseInt(filtrosAdicionales.idCategoria);
+      if (filtrosAdicionales.idCondicion) filtrosBackend.idCondicion = parseInt(filtrosAdicionales.idCondicion);
+      if (filtrosAdicionales.estado) filtrosBackend.estado = filtrosAdicionales.estado;
+      if (filtrosAdicionales.certificado) filtrosBackend.certificado = filtrosAdicionales.certificado;
+
+      const result = await alumnoService.getAll({ page, limit, filters: filtrosBackend });
+      const response = result?.data?.data || result?.data || result;
+      const pagInfo = result?.data?.pagination || result?.pagination || { page: 1, limit: 10, total: 0, totalPages: 0 };
+      setAlumnos(Array.isArray(response) ? response : []);
+      setPagination(pagInfo);
     } catch (error) {
       console.error('Error al cargar alumnos:', error);
       setAlumnos([]);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePageChange = (newPage) => {
+    setPagination(prev => ({ ...prev, page: newPage }));
+  };
+
+  const handleLimitChange = (newLimit) => {
+    const limitNum = parseInt(newLimit, 10);
+    setPagination(prev => ({ ...prev, limit: limitNum, page: 1 }));
   };
 
   const handleOpenModal = (item = null) => {
@@ -188,7 +215,7 @@ function Alumnos() {
     return certificado === 1 ? 'Sí' : 'No';
   };
 
-  // Filtrar y ordenar alumnos
+  // Filtrar localmente solo búsqueda de texto y estado de membresía
   const filteredAlumnos = React.useMemo(() => {
     let result = [...alumnos];
 
@@ -257,6 +284,8 @@ function Alumnos() {
         onEstadosChange={setEstadosFiltro}
         orden={ordenEstado}
         onOrdenChange={setOrdenEstado}
+        filtrosAdicionales={filtrosAdicionales}
+        onFiltrosChange={setFiltrosAdicionales}
       />
 
       {loading ? (
@@ -264,157 +293,172 @@ function Alumnos() {
           <CircularProgress />
         </Box>
       ) : isMobile ? (
-        <Stack spacing={2}>
-          {filteredAlumnos.length === 0 ? (
-            <Typography variant="body1" color="text.secondary" textAlign="center" p={4}>
-              No hay alumnos registrados
-            </Typography>
-          ) : (
-            filteredAlumnos.map((alumno) => (
-              <Card 
-                key={alumno.id_alumno}
-                sx={{ cursor: 'pointer' }}
-                onClick={() => handleOpenDetailDialog(alumno)}
-              >
-                <CardContent>
-                  <Typography variant="h6" gutterBottom>
-                    {alumno.nombre} {alumno.apellido}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    DNI: {alumno.dni || 'N/A'}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Fecha Nacimiento: {formatDate(alumno.fecha_nacimiento)}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Tutor: {alumno.tutor ? `${alumno.tutor.nombre} ${alumno.tutor.apellido}` : 'N/A'}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Categoría: {alumno.categoria?.categoria || 'N/A'}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Condición: {alumno.condicion?.condicion || 'N/A'}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Certificado Médico: {getCertificadoLabel(alumno.certificado ?? 0)}
-                    {alumno.certificado === 1 ? (
-                      <CheckCircleIcon sx={{ ml: 0.5, fontSize: 16, color: 'success.main', verticalAlign: 'middle' }} />
-                    ) : (
-                      <CancelIcon sx={{ ml: 0.5, fontSize: 16, color: 'error.main', verticalAlign: 'middle' }} />
-                    )}
-                  </Typography>
-                  <Box sx={{ mt: 1, mb: 1, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                    <Chip
-                      label={getEstadoLabel(alumno.estado)}
-                      color={getEstadoColor(alumno.estado)}
-                      size="small"
-                    />
-                    <EstadoMembresiaBadge alumno={alumno} size="small" />
-                  </Box>
-                  <Box sx={{ mt: 2, display: 'flex', gap: 1 }} onClick={(e) => e.stopPropagation()}>
-                    <IconButton size="small" color="primary" onClick={() => handleOpenModal(alumno)}>
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton size="small" color="error" onClick={() => handleDeleteClick(alumno)}>
-                      <DeleteIcon />
-                    </IconButton>
-                  </Box>
-                </CardContent>
-              </Card>
-            ))
-          )}
-        </Stack>
-      ) : (
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>ID</TableCell>
-                <TableCell>Nombre</TableCell>
-                <TableCell>Apellido</TableCell>
-                <TableCell>DNI</TableCell>
-                <TableCell>Fecha Nacimiento</TableCell>
-                <TableCell>Tutor</TableCell>
-                <TableCell>Categoría</TableCell>
-                <TableCell>Condición</TableCell>
-                <TableCell>Certificado</TableCell>
-                <TableCell>Estado</TableCell>
-                <TableCell>Estado Membresía</TableCell>
-                <TableCell align="right">Acciones</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredAlumnos.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={12} align="center">
-                    <Typography variant="body1" color="text.secondary" p={2}>
-                      No hay alumnos registrados
+        <>
+          <Stack spacing={2}>
+            {filteredAlumnos.length === 0 ? (
+              <Typography variant="body1" color="text.secondary" textAlign="center" p={4}>
+                No hay alumnos registrados
+              </Typography>
+            ) : (
+              filteredAlumnos.map((alumno) => (
+                <Card 
+                  key={alumno.id_alumno}
+                  sx={{ cursor: 'pointer' }}
+                  onClick={() => handleOpenDetailDialog(alumno)}
+                >
+                  <CardContent>
+                    <Typography variant="h6" gutterBottom>
+                      {alumno.nombre} {alumno.apellido}
                     </Typography>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredAlumnos.map((alumno) => (
-                  <TableRow 
-                    key={alumno.id_alumno} 
-                    hover
-                    sx={{ cursor: 'pointer' }}
-                    onClick={() => handleOpenDetailDialog(alumno)}
-                  >
-                    <TableCell>{alumno.id_alumno}</TableCell>
-                    <TableCell>{alumno.nombre}</TableCell>
-                    <TableCell>{alumno.apellido}</TableCell>
-                    <TableCell>{alumno.dni || 'N/A'}</TableCell>
-                    <TableCell>{formatDate(alumno.fecha_nacimiento)}</TableCell>
-                    <TableCell>
-                      {alumno.tutor ? `${alumno.tutor.nombre} ${alumno.tutor.apellido}` : 'N/A'}
-                    </TableCell>
-                    <TableCell>{alumno.categoria?.categoria || 'N/A'}</TableCell>
-                    <TableCell>{alumno.condicion?.condicion || 'N/A'}</TableCell>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                        {alumno.certificado === 1 ? (
-                          <>
-                            <CheckCircleIcon sx={{ fontSize: 18, color: 'success.main' }} />
-                            <Typography variant="body2" component="span">
-                              Sí
-                            </Typography>
-                          </>
-                        ) : (
-                          <>
-                            <CancelIcon sx={{ fontSize: 18, color: 'error.main' }} />
-                            <Typography variant="body2" component="span">
-                              No
-                            </Typography>
-                          </>
-                        )}
-                      </Box>
-                    </TableCell>
-                    <TableCell>
+                    <Typography variant="body2" color="text.secondary">
+                      DNI: {alumno.dni || 'N/A'}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Fecha Nacimiento: {formatDate(alumno.fecha_nacimiento)}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Tutor: {alumno.tutor ? `${alumno.tutor.nombre} ${alumno.tutor.apellido}` : 'N/A'}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Categoría: {alumno.categoria?.categoria || 'N/A'}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Condición: {alumno.condicion?.condicion || 'N/A'}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Certificado Médico: {getCertificadoLabel(alumno.certificado ?? 0)}
+                      {alumno.certificado === 1 ? (
+                        <CheckCircleIcon sx={{ ml: 0.5, fontSize: 16, color: 'success.main', verticalAlign: 'middle' }} />
+                      ) : (
+                        <CancelIcon sx={{ ml: 0.5, fontSize: 16, color: 'error.main', verticalAlign: 'middle' }} />
+                      )}
+                    </Typography>
+                    <Box sx={{ mt: 1, mb: 1, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                       <Chip
                         label={getEstadoLabel(alumno.estado)}
                         color={getEstadoColor(alumno.estado)}
                         size="small"
                       />
-                    </TableCell>
-                    <TableCell>
                       <EstadoMembresiaBadge alumno={alumno} size="small" />
-                    </TableCell>
-                    <TableCell align="right" onClick={(e) => e.stopPropagation()}>
-                      <Stack direction="row" spacing={1} justifyContent="flex-end">
-                        <IconButton size="small" color="primary" onClick={() => handleOpenModal(alumno)}>
-                          <EditIcon />
-                        </IconButton>
-                        <IconButton size="small" color="error" onClick={() => handleDeleteClick(alumno)}>
-                          <DeleteIcon />
-                        </IconButton>
-                      </Stack>
+                    </Box>
+                    <Box sx={{ mt: 2, display: 'flex', gap: 1 }} onClick={(e) => e.stopPropagation()}>
+                      <IconButton size="small" color="primary" onClick={() => handleOpenModal(alumno)}>
+                        <EditIcon />
+                      </IconButton>
+                      <IconButton size="small" color="error" onClick={() => handleDeleteClick(alumno)}>
+                        <DeleteIcon />
+                      </IconButton>
+                    </Box>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </Stack>
+          <Pagination
+            pagination={pagination}
+            onPageChange={handlePageChange}
+            onLimitChange={handleLimitChange}
+          />
+        </>
+      ) : (
+        <>
+          <TableContainer component={Paper}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>ID</TableCell>
+                  <TableCell>Nombre</TableCell>
+                  <TableCell>Apellido</TableCell>
+                  <TableCell>DNI</TableCell>
+                  <TableCell>Fecha Nacimiento</TableCell>
+                  <TableCell>Tutor</TableCell>
+                  <TableCell>Categoría</TableCell>
+                  <TableCell>Condición</TableCell>
+                  <TableCell>Certificado</TableCell>
+                  <TableCell>Estado</TableCell>
+                  <TableCell>Estado Membresía</TableCell>
+                  <TableCell align="right">Acciones</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {filteredAlumnos.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={12} align="center">
+                      <Typography variant="body1" color="text.secondary" p={2}>
+                        No hay alumnos registrados
+                      </Typography>
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+                ) : (
+                  filteredAlumnos.map((alumno) => (
+                    <TableRow 
+                      key={alumno.id_alumno} 
+                      hover
+                      sx={{ cursor: 'pointer' }}
+                      onClick={() => handleOpenDetailDialog(alumno)}
+                    >
+                      <TableCell>{alumno.id_alumno}</TableCell>
+                      <TableCell>{alumno.nombre}</TableCell>
+                      <TableCell>{alumno.apellido}</TableCell>
+                      <TableCell>{alumno.dni || 'N/A'}</TableCell>
+                      <TableCell>{formatDate(alumno.fecha_nacimiento)}</TableCell>
+                      <TableCell>
+                        {alumno.tutor ? `${alumno.tutor.nombre} ${alumno.tutor.apellido}` : 'N/A'}
+                      </TableCell>
+                      <TableCell>{alumno.categoria?.categoria || 'N/A'}</TableCell>
+                      <TableCell>{alumno.condicion?.condicion || 'N/A'}</TableCell>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                          {alumno.certificado === 1 ? (
+                            <>
+                              <CheckCircleIcon sx={{ fontSize: 18, color: 'success.main' }} />
+                              <Typography variant="body2" component="span">
+                                Sí
+                              </Typography>
+                            </>
+                          ) : (
+                            <>
+                              <CancelIcon sx={{ fontSize: 18, color: 'error.main' }} />
+                              <Typography variant="body2" component="span">
+                                No
+                              </Typography>
+                            </>
+                          )}
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={getEstadoLabel(alumno.estado)}
+                          color={getEstadoColor(alumno.estado)}
+                          size="small"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <EstadoMembresiaBadge alumno={alumno} size="small" />
+                      </TableCell>
+                      <TableCell align="right" onClick={(e) => e.stopPropagation()}>
+                        <Stack direction="row" spacing={1} justifyContent="flex-end">
+                          <IconButton size="small" color="primary" onClick={() => handleOpenModal(alumno)}>
+                            <EditIcon />
+                          </IconButton>
+                          <IconButton size="small" color="error" onClick={() => handleDeleteClick(alumno)}>
+                            <DeleteIcon />
+                          </IconButton>
+                        </Stack>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+          
+          <Pagination
+            pagination={pagination}
+            onPageChange={handlePageChange}
+            onLimitChange={handleLimitChange}
+          />
+        </>
       )}
 
       {/* Modal para crear/editar alumno */}
