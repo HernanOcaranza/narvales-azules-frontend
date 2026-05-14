@@ -139,11 +139,11 @@ function MembresiasTable({
             const precio = getPrecio(membresia);
             const vencimientoProximo = isVencimientoProximo(membresia.fecha_fin);
             return (
-              <Card key={membresia.id_membrecia}>
+              <Card key={membresia.id_membrecia} variant="outlined">
                 <CardContent>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
                     <Typography variant="h6">
-                      Membresía #{membresia.id_membrecia}
+                      Membresía
                     </Typography>
                     <Chip
                       label={membresia.estado?.toUpperCase()}
@@ -214,7 +214,6 @@ function MembresiasTable({
       <Table>
         <TableHead>
           <TableRow>
-            <TableCell>ID</TableCell>
             <TableCell>Alumno</TableCell>
             <TableCell>Tipo</TableCell>
             <TableCell>Grupo</TableCell>
@@ -228,7 +227,7 @@ function MembresiasTable({
         <TableBody>
           {membresias.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={9} align="center">
+              <TableCell colSpan={8} align="center">
                 <Typography variant="body1" color="text.secondary" p={2}>
                   No hay membresías registradas
                 </Typography>
@@ -240,7 +239,6 @@ function MembresiasTable({
               const vencimientoProximo = isVencimientoProximo(membresia.fecha_fin);
               return (
                 <TableRow key={membresia.id_membrecia} hover>
-                  <TableCell>{membresia.id_membrecia}</TableCell>
                   <TableCell>
                     {membresia.alumno
                       ? `${membresia.alumno.nombre} ${membresia.alumno.apellido}`

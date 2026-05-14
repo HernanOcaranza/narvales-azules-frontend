@@ -19,6 +19,10 @@ import { getEstadoMembresia, getEstadoMembresiaMuiColor } from '../../utils/memb
  * @param {string} props.size - Tamaño del badge ('small' | 'medium' | 'large', default: 'small')
  */
 export const EstadoMembresiaBadge = ({ alumno, showIcon = true, size = 'small' }) => {
+  if (!alumno) {
+    return null;
+  }
+  
   const estado = getEstadoMembresia(alumno);
   const muiColor = getEstadoMembresiaMuiColor(estado.tipo);
 

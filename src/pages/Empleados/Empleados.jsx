@@ -138,7 +138,7 @@ function Empleados() {
             </Typography>
           ) : (
             empleados.map((empleado) => (
-              <Card key={empleado.id_empleado}>
+              <Card key={empleado.id_empleado} variant="outlined">
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
                     {empleado.nombre} {empleado.apellido}
@@ -148,9 +148,6 @@ function Empleados() {
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     Tipo: {getTipoLabel(empleado.tipo)}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    DNI: {empleado.dni || 'N/A'}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     Teléfono: {empleado.telefono}
@@ -183,12 +180,10 @@ function Empleados() {
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>ID</TableCell>
                 <TableCell>Nombre</TableCell>
                 <TableCell>Apellido</TableCell>
                 <TableCell>Usuario</TableCell>
                 <TableCell>Tipo</TableCell>
-                <TableCell>DNI</TableCell>
                 <TableCell>Teléfono</TableCell>
                 <TableCell>Fecha Alta</TableCell>
                 <TableCell>Estado</TableCell>
@@ -198,7 +193,7 @@ function Empleados() {
             <TableBody>
               {empleados.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={10} align="center">
+                  <TableCell colSpan={8} align="center">
                     <Typography variant="body1" color="text.secondary" p={2}>
                       No hay empleados registrados
                     </Typography>
@@ -207,12 +202,10 @@ function Empleados() {
               ) : (
                 empleados.map((empleado) => (
                   <TableRow key={empleado.id_empleado} hover>
-                    <TableCell>{empleado.id_empleado}</TableCell>
                     <TableCell>{empleado.nombre}</TableCell>
                     <TableCell>{empleado.apellido}</TableCell>
                     <TableCell>{empleado.usuario}</TableCell>
                     <TableCell>{getTipoLabel(empleado.tipo)}</TableCell>
-                    <TableCell>{empleado.dni || 'N/A'}</TableCell>
                     <TableCell>{empleado.telefono}</TableCell>
                     <TableCell>{formatDate(empleado.fecha_alta)}</TableCell>
                     <TableCell>

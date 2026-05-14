@@ -71,10 +71,10 @@ function PagosTable({
           pagos.map((pago) => {
             const total = calculateTotal(pago);
             return (
-              <Card key={pago.id_pago}>
+              <Card key={pago.id_pago} variant="outlined">
                 <CardContent>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-                    <Typography variant="h6">Pago #{pago.id_pago}</Typography>
+                    <Typography variant="h6">Pago</Typography>
                     <Chip
                       label={pago.tipo?.toUpperCase()}
                       color={getTipoColor(pago.tipo)}
@@ -128,7 +128,6 @@ function PagosTable({
       <Table>
         <TableHead>
           <TableRow>
-            <TableCell>ID</TableCell>
             <TableCell>Tipo</TableCell>
             <TableCell>Fecha</TableCell>
             <TableCell>Estado</TableCell>
@@ -140,7 +139,7 @@ function PagosTable({
         <TableBody>
           {pagos.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={7} align="center">
+              <TableCell colSpan={6} align="center">
                 <Typography variant="body1" color="text.secondary" p={2}>
                   No hay pagos registrados
                 </Typography>
@@ -151,7 +150,6 @@ function PagosTable({
               const total = calculateTotal(pago);
               return (
                 <TableRow key={pago.id_pago} hover>
-                  <TableCell>{pago.id_pago}</TableCell>
                   <TableCell>
                     <Chip
                       label={pago.tipo?.toUpperCase()}

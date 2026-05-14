@@ -27,6 +27,9 @@ import {
   Divider,
   Grid,
   Alert,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -42,6 +45,7 @@ import {
   CreditCard as CreditCardIcon,
   Payment as PaymentIcon,
   Info as InfoIcon,
+  ExpandMore as ExpandMoreIcon,
 } from '@mui/icons-material';
 import * as alumnoService from '../../services/alumnoService';
 import * as tutorService from '../../services/tutorService';
@@ -52,8 +56,14 @@ import FiltrosAlumnos from '../../components/FiltrosAlumnos/FiltrosAlumnos';
 import Pagination from '../../components/Pagination/Pagination';
 import { formatDate, formatCurrency } from '../../utils/helpers';
 import { filtrarAlumnosPorEstado, ordenarAlumnosPorEstado } from '../../utils/membresiaHelpers';
+import { useAuth } from '../../hooks/useAuth';
 
 function Alumnos() {
+  const { userRole } = useAuth();
+  const isProfesor = userRole === 'profesor';
+  const isRecepcionista = userRole === 'recepcionista';
+  const canEdit = !isProfesor;
+  const canViewMembershipStatus = !isProfesor;
   const [alumnos, setAlumnos] = React.useState([]);
   const [loading, setLoading] = React.useState(false);
   const [searchText, setSearchText] = React.useState('');
@@ -267,26 +277,37 @@ function Alumnos() {
             ),
           }}
         />
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          sx={{ whiteSpace: 'nowrap' }}
-          onClick={() => handleOpenModal()}
-        >
-          Nuevo Alumno
-        </Button>
+        {canEdit && (
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            sx={{ whiteSpace: 'nowrap' }}
+            onClick={() => handleOpenModal()}
+          >
+            Nuevo Alumno
+          </Button>
+        )}
       </Box>
 
-      {/* Filtros de membresía */}
-      <FiltrosAlumnos
-        alumnos={alumnos}
-        estadosSeleccionados={estadosFiltro}
-        onEstadosChange={setEstadosFiltro}
-        orden={ordenEstado}
-        onOrdenChange={setOrdenEstado}
-        filtrosAdicionales={filtrosAdicionales}
-        onFiltrosChange={setFiltrosAdicionales}
-      />
+      {/* Filtros de membresía - para admin y recepcionista */}
+      {canViewMembershipStatus && (
+        <Accordion defaultCollapsed disableGutters>
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <Typography>Filtros</Typography>
+          </AccordionSummary>
+          <AccordionDetails>
+            <FiltrosAlumnos
+              alumnos={alumnos}
+              estadosSeleccionados={estadosFiltro}
+              onEstadosChange={setEstadosFiltro}
+              orden={ordenEstado}
+              onOrdenChange={setOrdenEstado}
+              filtrosAdicionales={filtrosAdicionales}
+              onFiltrosChange={setFiltrosAdicionales}
+            />
+          </AccordionDetails>
+        </Accordion>
+      )}
 
       {loading ? (
         <Box display="flex" justifyContent="center" p={4}>
@@ -302,6 +323,7 @@ function Alumnos() {
             ) : (
               filteredAlumnos.map((alumno) => (
                 <Card 
+                  variant="outlined"
                   key={alumno.id_alumno}
                   sx={{ cursor: 'pointer' }}
                   onClick={() => handleOpenDetailDialog(alumno)}
@@ -309,9 +331,6 @@ function Alumnos() {
                   <CardContent>
                     <Typography variant="h6" gutterBottom>
                       {alumno.nombre} {alumno.apellido}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      DNI: {alumno.dni || 'N/A'}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       Fecha Nacimiento: {formatDate(alumno.fecha_nacimiento)}
@@ -339,16 +358,18 @@ function Alumnos() {
                         color={getEstadoColor(alumno.estado)}
                         size="small"
                       />
-                      <EstadoMembresiaBadge alumno={alumno} size="small" />
+                      {!isProfesor && <EstadoMembresiaBadge aluno={alumno} size="small" />}
                     </Box>
-                    <Box sx={{ mt: 2, display: 'flex', gap: 1 }} onClick={(e) => e.stopPropagation()}>
-                      <IconButton size="small" color="primary" onClick={() => handleOpenModal(alumno)}>
-                        <EditIcon />
-                      </IconButton>
-                      <IconButton size="small" color="error" onClick={() => handleDeleteClick(alumno)}>
-                        <DeleteIcon />
-                      </IconButton>
-                    </Box>
+                    {canEdit && (
+                      <Box sx={{ mt: 2, display: 'flex', gap: 1 }} onClick={(e) => e.stopPropagation()}>
+                        <IconButton size="small" color="primary" onClick={() => handleOpenModal(alumno)}>
+                          <EditIcon />
+                        </IconButton>
+                        <IconButton size="small" color="error" onClick={() => handleDeleteClick(alumno)}>
+                          <DeleteIcon />
+                        </IconButton>
+                      </Box>
+                    )}
                   </CardContent>
                 </Card>
               ))
@@ -366,24 +387,22 @@ function Alumnos() {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>ID</TableCell>
                   <TableCell>Nombre</TableCell>
                   <TableCell>Apellido</TableCell>
-                  <TableCell>DNI</TableCell>
                   <TableCell>Fecha Nacimiento</TableCell>
                   <TableCell>Tutor</TableCell>
                   <TableCell>Categoría</TableCell>
                   <TableCell>Condición</TableCell>
                   <TableCell>Certificado</TableCell>
                   <TableCell>Estado</TableCell>
-                  <TableCell>Estado Membresía</TableCell>
-                  <TableCell align="right">Acciones</TableCell>
+                  {!isProfesor && <TableCell>Estado Membresía</TableCell>}
+                  {!isProfesor && <TableCell align="right">Acciones</TableCell>}
                 </TableRow>
               </TableHead>
               <TableBody>
                 {filteredAlumnos.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={12} align="center">
+                    <TableCell colSpan={isProfesor ? 8 : 10} align="center">
                       <Typography variant="body1" color="text.secondary" p={2}>
                         No hay alumnos registrados
                       </Typography>
@@ -397,10 +416,8 @@ function Alumnos() {
                       sx={{ cursor: 'pointer' }}
                       onClick={() => handleOpenDetailDialog(alumno)}
                     >
-                      <TableCell>{alumno.id_alumno}</TableCell>
                       <TableCell>{alumno.nombre}</TableCell>
                       <TableCell>{alumno.apellido}</TableCell>
-                      <TableCell>{alumno.dni || 'N/A'}</TableCell>
                       <TableCell>{formatDate(alumno.fecha_nacimiento)}</TableCell>
                       <TableCell>
                         {alumno.tutor ? `${alumno.tutor.nombre} ${alumno.tutor.apellido}` : 'N/A'}
@@ -433,19 +450,23 @@ function Alumnos() {
                           size="small"
                         />
                       </TableCell>
-                      <TableCell>
-                        <EstadoMembresiaBadge alumno={alumno} size="small" />
-                      </TableCell>
-                      <TableCell align="right" onClick={(e) => e.stopPropagation()}>
-                        <Stack direction="row" spacing={1} justifyContent="flex-end">
-                          <IconButton size="small" color="primary" onClick={() => handleOpenModal(alumno)}>
-                            <EditIcon />
-                          </IconButton>
-                          <IconButton size="small" color="error" onClick={() => handleDeleteClick(alumno)}>
-                            <DeleteIcon />
-                          </IconButton>
-                        </Stack>
-                      </TableCell>
+                      {!isProfesor && (
+                        <TableCell>
+                          <EstadoMembresiaBadge alumno={alumno} size="small" />
+                        </TableCell>
+                      )}
+                      {!isProfesor && (
+                        <TableCell align="right" onClick={(e) => e.stopPropagation()}>
+                          <Stack direction="row" spacing={1} justifyContent="flex-end">
+                            <IconButton size="small" color="primary" onClick={() => handleOpenModal(alumno)}>
+                              <EditIcon />
+                            </IconButton>
+                            <IconButton size="small" color="error" onClick={() => handleDeleteClick(alumno)}>
+                              <DeleteIcon />
+                            </IconButton>
+                          </Stack>
+                        </TableCell>
+                      )}
                     </TableRow>
                   ))
                 )}
@@ -714,7 +735,7 @@ function Alumnos() {
                       <Divider sx={{ mb: 2 }} />
                     </Grid>
 
-                    {alumnoCompleto?.membresias && alumnoCompleto.membresias.length > 0 ? (
+                    {canViewMembershipStatus && alumnoCompleto?.membresias && alumnoCompleto.membresias.length > 0 ? (
                       <Grid item xs={12}>
                         <Stack spacing={3}>
                           {alumnoCompleto.membresias.map((membresia, index) => {
@@ -907,7 +928,7 @@ function Alumnos() {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDetailDialog}>Cerrar</Button>
-          {(alumnoCompleto || detailDialog.alumno) && (
+          {!isProfesor && (alumnoCompleto || detailDialog.alumno) && (
             <Button
               variant="contained"
               startIcon={<EditIcon />}

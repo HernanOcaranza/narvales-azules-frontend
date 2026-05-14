@@ -29,6 +29,9 @@ import {
   MenuItem,
   Grid,
   Divider,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
 } from '@mui/material';
 import {
   PlayArrow as PlayArrowIcon,
@@ -36,14 +39,20 @@ import {
   Visibility as VisibilityIcon,
   Save as SaveIcon,
   Close as CloseIcon,
+  ExpandMore as ExpandMoreIcon,
 } from '@mui/icons-material';
 import * as claseService from '../../services/claseService';
 import { Alert, Snackbar } from '@mui/material';
 import { formatDate } from '../../utils/helpers';
 import Pagination from '../../components/Pagination/Pagination';
 import ClasesFilters from '../../components/clases/ClasesFilters';
+import { useAuth } from '../../hooks/useAuth';
 
 function Clases() {
+  const { userRole } = useAuth();
+  const isProfesor = userRole === 'profesor';
+  const isRecepcionista = userRole === 'recepcionista';
+  const canEdit = !isProfesor && !isRecepcionista;
   const [clases, setClases] = React.useState([]);
   const [loading, setLoading] = React.useState(false);
   const [generating, setGenerating] = React.useState(false);
@@ -393,21 +402,30 @@ function Clases() {
           justifyContent: 'flex-end',
         }}
       >
-        <Button
-          variant="contained"
-          startIcon={generating ? <CircularProgress size={20} color="inherit" /> : <PlayArrowIcon />}
-          onClick={handleGenerarClases}
-          disabled={generating || loading}
-        >
-          {generating ? 'Generando...' : 'Generar Clases'}
-        </Button>
+        {canEdit && (
+          <Button
+            variant="contained"
+            startIcon={generating ? <CircularProgress size={20} color="inherit" /> : <PlayArrowIcon />}
+            onClick={handleGenerarClases}
+            disabled={generating || loading}
+          >
+            {generating ? 'Generando...' : 'Generar Clases'}
+          </Button>
+        )}
       </Box>
 
-      <ClasesFilters
-        filters={filters}
-        onFilterChange={setFilters}
-onClearFilters={handleClearFilters}
-      />
+<Accordion defaultCollapsed disableGutters>
+        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <Typography>Filtros</Typography>
+        </AccordionSummary>
+        <AccordionDetails>
+          <ClasesFilters
+            filters={filters}
+            onFilterChange={setFilters}
+            onClearFilters={handleClearFilters}
+          />
+        </AccordionDetails>
+      </Accordion>
 
       {loading ? (
         <Box display="flex" justifyContent="center" p={4}>
@@ -422,7 +440,7 @@ onClearFilters={handleClearFilters}
               </Typography>
             ) : (
               clases.map((clase) => (
-                <Card key={clase.id_clase || clase.id}>
+                <Card variant="outlined" key={clase.id_clase || clase.id}>
                   <CardContent>
                     <Typography variant="h6" gutterBottom>
                       {getGrupoNombre(clase)}
@@ -444,9 +462,11 @@ onClearFilters={handleClearFilters}
                       />
                     </Box>
                     <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
-                      <IconButton size="small" color="primary" onClick={() => handleOpenEditDialog(clase)}>
-                        <EditIcon />
-                      </IconButton>
+                      {canEdit && (
+                        <IconButton size="small" color="primary" onClick={() => handleOpenEditDialog(clase)}>
+                          <EditIcon />
+                        </IconButton>
+                      )}
                       <IconButton size="small" color="primary" onClick={() => handleOpenDetailDialog(clase)}>
                         <VisibilityIcon />
                       </IconButton>
@@ -474,13 +494,13 @@ onClearFilters={handleClearFilters}
                   <TableCell>Capacidad</TableCell>
                   <TableCell>Inscriptos</TableCell>
                   <TableCell>Estado</TableCell>
-                  <TableCell align="right">Acciones</TableCell>
+                  {canEdit && <TableCell align="right">Acciones</TableCell>}
                 </TableRow>
               </TableHead>
               <TableBody>
                 {clases.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} align="center">
+                    <TableCell colSpan={isProfesor ? 6 : 7} align="center">
                       <Typography variant="body1" color="text.secondary" p={2}>
                         No hay clases registradas
                       </Typography>
@@ -503,9 +523,11 @@ onClearFilters={handleClearFilters}
                       </TableCell>
                       <TableCell align="right">
                         <Stack direction="row" spacing={1} justifyContent="flex-end">
-                          <IconButton size="small" color="primary" onClick={() => handleOpenEditDialog(clase)}>
-                            <EditIcon />
-                          </IconButton>
+                          {canEdit && (
+                            <IconButton size="small" color="primary" onClick={() => handleOpenEditDialog(clase)}>
+                              <EditIcon />
+                            </IconButton>
+                          )}
                           <IconButton size="small" color="primary" onClick={() => handleOpenDetailDialog(clase)}>
                             <VisibilityIcon />
                           </IconButton>
@@ -735,7 +757,7 @@ onClearFilters={handleClearFilters}
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDetailDialog}>Cerrar</Button>
-          {detailDialog.clase && (
+          {canEdit && detailDialog.clase && (
             <Button
               variant="contained"
               startIcon={<EditIcon />}

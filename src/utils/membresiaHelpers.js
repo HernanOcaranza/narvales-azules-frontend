@@ -8,8 +8,8 @@
  * @returns {object} - Objeto con tipo, label, color, icon y prioridad
  */
 export function getEstadoMembresia(alumno) {
-  // Si no tiene membresías
-  if (!alumno.membresias || alumno.membresias.length === 0) {
+  // Si no existe el alumno o no tiene la propiedad membresias
+  if (!alumno || !alumno.membresias || !Array.isArray(alumno.membresias) || alumno.membresias.length === 0) {
     return {
       tipo: 'sin_membresia',
       label: 'Sin Membresía',

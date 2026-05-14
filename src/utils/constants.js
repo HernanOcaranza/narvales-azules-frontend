@@ -11,7 +11,6 @@ export const ROUTES = {
   PAGOS: '/pagos',
   CLASES: '/clases',
   GRUPOS: '/grupos',
-  GRUPOS_NUEVO: '/grupos/nuevo',
   EMPLEADOS: '/empleados',
   CONFIGURACION: '/configuracion',
   CONFIGURACION_CATEGORIAS: '/configuracion/categorias',
