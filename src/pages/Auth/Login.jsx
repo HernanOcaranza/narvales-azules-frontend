@@ -19,22 +19,19 @@ import { ROUTES } from '../../utils/constants';
 function Login() {
   const navigate = useNavigate();
   const theme = useTheme();
-  const { login, isAuthenticated } = useAuth();
+  const { login, user, isAuthenticated } = useAuth();
 
-  // Estados del formulario
   const [formData, setFormData] = React.useState({
     usuario: '',
     contrasenia: '',
   });
 
-  // Estados de carga y errores
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState('');
 
-  // Redirigir si ya está autenticado
   React.useEffect(() => {
     if (isAuthenticated) {
-      navigate(ROUTES.DASHBOARD, { replace: true });
+      navigate(ROUTES.ALUMNOS, { replace: true });
     }
   }, [isAuthenticated, navigate]);
 
@@ -44,7 +41,6 @@ function Login() {
       ...prev,
       [name]: value,
     }));
-    // Limpiar error cuando el usuario empieza a escribir
     if (error) {
       setError('');
     }
@@ -54,7 +50,6 @@ function Login() {
     e.preventDefault();
     setError('');
 
-    // Validación básica
     if (!formData.usuario.trim() || !formData.contrasenia.trim()) {
       setError('Usuario y contraseña son obligatorios');
       return;
@@ -63,7 +58,6 @@ function Login() {
     setLoading(true);
     try {
       await login(formData.usuario, formData.contrasenia);
-      navigate(ROUTES.DASHBOARD, { replace: true });
     } catch (error) {
       console.error('Error al iniciar sesión:', error);
       setError(

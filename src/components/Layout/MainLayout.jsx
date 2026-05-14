@@ -37,44 +37,52 @@ import {
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ROUTES } from '../../utils/constants';
 import { useAuth } from '../../hooks/useAuth';
+import { usePermission } from '../../hooks/usePermission';
 
 const DRAWER_WIDTH = 240;
 
-const menuItems = [
+const allMenuItems = [
   {
     key: ROUTES.DASHBOARD,
     icon: <DashboardIcon />,
     label: 'Dashboard',
+    roles: ['admin'],
   },
   {
     key: ROUTES.ALUMNOS,
     icon: <PeopleIcon />,
     label: 'Alumnos',
+    roles: ['admin', 'recepcionista', 'profesor'],
   },
   {
     key: ROUTES.MEMBRESIAS,
     icon: <CreditCardIcon />,
     label: 'Membresías',
+    roles: ['admin', 'recepcionista'],
   },
   {
     key: ROUTES.PAGOS,
     icon: <AttachMoneyIcon />,
     label: 'Pagos',
+    roles: ['admin', 'recepcionista'],
   },
   {
     key: ROUTES.CLASES,
     icon: <BookIcon />,
     label: 'Clases',
+    roles: ['admin', 'recepcionista', 'profesor'],
   },
   {
     key: ROUTES.GRUPOS,
     icon: <GroupIcon />,
     label: 'Grupos',
+    roles: ['admin', 'recepcionista', 'profesor'],
   },
   {
     key: ROUTES.EMPLEADOS,
     icon: <BadgeIcon />,
     label: 'Empleados',
+    roles: ['admin'],
   },
 ];
 
@@ -83,26 +91,31 @@ const configuracionSubItems = [
     key: ROUTES.CONFIGURACION_CATEGORIAS,
     icon: <CategoryIcon />,
     label: 'Categorías',
+    roles: ['admin'],
   },
   {
     key: ROUTES.CONFIGURACION_DISCIPLINAS,
     icon: <SportsIcon />,
     label: 'Disciplinas',
+    roles: ['admin'],
   },
   {
     key: ROUTES.CONFIGURACION_CONDICIONES,
     icon: <MedicalServicesIcon />,
     label: 'Condiciones',
+    roles: ['admin'],
   },
   {
     key: ROUTES.CONFIGURACION_TIPO_MEMBRESIAS,
     icon: <CardMembershipIcon />,
     label: 'Tipos de Membresía',
+    roles: ['admin'],
   },
   {
     key: ROUTES.CONFIGURACION_PRECIO_MEMBRESIAS,
     icon: <PriceCheckIcon />,
     label: 'Precios de Membresía',
+    roles: ['admin'],
   },
 ];
 
@@ -111,8 +124,18 @@ function MainLayout({ children }) {
   const location = useLocation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const { logout, user } = useAuth();
+  const { logout, user, userRole } = useAuth();
   const [mobileOpen, setMobileOpen] = React.useState(false);
+
+  const menuItems = allMenuItems.filter(item => 
+    userRole && item.roles.includes(userRole)
+  );
+
+  const filteredConfigItems = configuracionSubItems.filter(item =>
+    userRole && item.roles.includes(userRole)
+  );
+
+  const showConfig = userRole === 'admin';
   const [configOpen, setConfigOpen] = React.useState(
     location.pathname.startsWith(ROUTES.CONFIGURACION)
   );
@@ -194,38 +217,40 @@ function MainLayout({ children }) {
           </ListItem>
         ))}
         
-        {/* Menú de Configuración con submenús */}
-        <ListItem disablePadding>
-          <ListItemButton
-            onClick={handleConfigToggle}
-            selected={isConfigRoute}
-            sx={{
-              '&.Mui-selected': {
-                backgroundColor: 'primary.light',
-                color: 'white',
-                '&:hover': {
-                  backgroundColor: 'primary.main',
-                },
-                '& .MuiListItemIcon-root': {
-                  color: 'white',
-                },
-              },
-            }}
-          >
-            <ListItemIcon
-              sx={{
-                color: isConfigRoute ? 'white' : 'inherit',
-              }}
-            >
-              <SettingsIcon />
-            </ListItemIcon>
-            <ListItemText primary="Configuración" />
-            {configOpen ? <ExpandLess /> : <ExpandMore />}
-          </ListItemButton>
-        </ListItem>
-        <Collapse in={configOpen} timeout="auto" unmountOnExit>
-          <List component="div" disablePadding>
-            {configuracionSubItems.map((item) => (
+        {/* Menú de Configuración con submenús - solo admin */}
+        {showConfig && (
+          <>
+            <ListItem disablePadding>
+              <ListItemButton
+                onClick={handleConfigToggle}
+                selected={isConfigRoute}
+                sx={{
+                  '&.Mui-selected': {
+                    backgroundColor: 'primary.light',
+                    color: 'white',
+                    '&:hover': {
+                      backgroundColor: 'primary.main',
+                    },
+                    '& .MuiListItemIcon-root': {
+                      color: 'white',
+                    },
+                  },
+                }}
+              >
+                <ListItemIcon
+                  sx={{
+                    color: isConfigRoute ? 'white' : 'inherit',
+                  }}
+                >
+                  <SettingsIcon />
+                </ListItemIcon>
+                <ListItemText primary="Configuración" />
+                {configOpen ? <ExpandLess /> : <ExpandMore />}
+              </ListItemButton>
+            </ListItem>
+            <Collapse in={configOpen} timeout="auto" unmountOnExit>
+              <List component="div" disablePadding>
+                {filteredConfigItems.map((item) => (
               <ListItem key={item.key} disablePadding>
                 <ListItemButton
                   selected={isConfigSelected(item.key)}
@@ -257,6 +282,8 @@ function MainLayout({ children }) {
             ))}
           </List>
         </Collapse>
+          </>
+        )}
       </List>
     </Box>
   );
@@ -332,8 +359,8 @@ function MainLayout({ children }) {
         component="main"
         sx={{
           flexGrow: 1,
-          p: 3,
-          width: { md: `calc(100% - ${DRAWER_WIDTH}px)` },
+          p: 0,
+          width: '100%',
           mt: '64px',
         }}
       >

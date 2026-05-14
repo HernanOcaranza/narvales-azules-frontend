@@ -61,47 +61,43 @@ async function request(endpoint, options = {}) {
   }
 }
 
-/**
- * Limpia un objeto para asegurar que solo contenga datos serializables
- * Elimina funciones, elementos del DOM, y referencias circulares
- */
-const cleanForSerialization = (obj) => {
+const cleanForSerialization = (obj, seen = new WeakSet()) => {
   if (obj === null || obj === undefined) {
     return obj;
   }
   
-  // Si es un valor primitivo, retornarlo tal cual
   if (typeof obj !== 'object') {
     return obj;
   }
-  
-  // Si es una fecha, convertirla a string
+
   if (obj instanceof Date) {
     return obj.toISOString();
   }
-  
-  // Si es un array, limpiar cada elemento
+
   if (Array.isArray(obj)) {
-    return obj.map(cleanForSerialization);
+    return obj.map(item => cleanForSerialization(item, seen));
   }
-  
-  // Si es un objeto, limpiar cada propiedad
+
+  if (seen.has(obj)) {
+    return '[Circular]';
+  }
+
+  seen.add(obj);
+
   const cleaned = {};
   for (const key in obj) {
     if (Object.prototype.hasOwnProperty.call(obj, key)) {
       const value = obj[key];
-      // Saltar funciones y elementos del DOM
       if (typeof value === 'function') {
         continue;
       }
       if (value instanceof HTMLElement || value instanceof Event) {
         continue;
       }
-      // Saltar propiedades que empiezan con __ (propiedades internas de React)
       if (key.startsWith('__')) {
         continue;
       }
-      cleaned[key] = cleanForSerialization(value);
+      cleaned[key] = cleanForSerialization(value, seen);
     }
   }
   return cleaned;

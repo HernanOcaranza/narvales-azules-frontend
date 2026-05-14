@@ -11,7 +11,6 @@ import Membresias from './pages/Membresias/Membresias';
 import Pagos from './pages/Pagos/Pagos';
 import Clases from './pages/Clases/Clases';
 import Grupos from './pages/Grupos/Grupos';
-import NuevoGrupo from './pages/Grupos/NuevoGrupo';
 import Empleados from './pages/Empleados/Empleados';
 import Categorias from './pages/Configuracion/Categorias';
 import Disciplinas from './pages/Configuracion/Disciplinas';
@@ -82,14 +81,13 @@ function App() {
                       <Route path={ROUTES.PAGOS} element={<Pagos />} />
                       <Route path={ROUTES.CLASES} element={<Clases />} />
                       <Route path={ROUTES.GRUPOS} element={<Grupos />} />
-                      <Route path={ROUTES.GRUPOS_NUEVO} element={<NuevoGrupo />} />
                       <Route path={ROUTES.EMPLEADOS} element={<Empleados />} />
                       <Route path={ROUTES.CONFIGURACION_CATEGORIAS} element={<Categorias />} />
                       <Route path={ROUTES.CONFIGURACION_DISCIPLINAS} element={<Disciplinas />} />
                       <Route path={ROUTES.CONFIGURACION_CONDICIONES} element={<Condiciones />} />
                       <Route path={ROUTES.CONFIGURACION_TIPO_MEMBRESIAS} element={<TipoMembresias />} />
                       <Route path={ROUTES.CONFIGURACION_PRECIO_MEMBRESIAS} element={<PrecioMembresias />} />
-                      <Route path="*" element={<Navigate to={ROUTES.DASHBOARD} replace />} />
+                      <Route path="*" element={<Navigate to={ROUTES.ALUMNOS} replace />} />
                     </Routes>
                   </MainLayout>
                 </ProtectedRoute>

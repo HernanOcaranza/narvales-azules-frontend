@@ -27,7 +27,7 @@ function CategoriaCards({ categorias, onEdit, onDelete }) {
   return (
     <Stack spacing={2}>
       {categorias.map((categoria) => (
-        <Card key={categoria.id_categoria}>
+        <Card key={categoria.id_categoria} variant="outlined">
           <CardContent>
             <Typography variant="h6" gutterBottom>
               {categoria.categoria}

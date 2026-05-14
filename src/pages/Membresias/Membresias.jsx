@@ -12,8 +12,11 @@ import {
   Snackbar,
   useMediaQuery,
   useTheme,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
 } from '@mui/material';
-import { Add as AddIcon } from '@mui/icons-material';
+import { Add as AddIcon, ExpandMore as ExpandMoreIcon } from '@mui/icons-material';
 import { useMembresias } from '../../hooks/useMembresias';
 import { useTipoMembresias } from '../../hooks/useTipoMembresias';
 import * as membresiasService from '../../services/membresiasService';
@@ -282,12 +285,19 @@ function Membresias() {
         </Button>
       </Box>
 
-      <MembresiasFilters
-        filters={filters}
-        onFilterChange={handleFilterChange}
-        onClearFilters={handleClearFilters}
-        tiposMembrecia={tipos}
-      />
+      <Accordion defaultExpanded disableGutters>
+        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <Typography>Filtros</Typography>
+        </AccordionSummary>
+        <AccordionDetails>
+          <MembresiasFilters
+            filters={filters}
+            onFilterChange={handleFilterChange}
+            onClearFilters={handleClearFilters}
+            tiposMembrecia={tipos}
+          />
+        </AccordionDetails>
+      </Accordion>
 
       <MembresiasTable
         membresias={membresias}

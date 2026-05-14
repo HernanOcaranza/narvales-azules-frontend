@@ -12,8 +12,11 @@ import {
   Snackbar,
   useMediaQuery,
   useTheme,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
 } from '@mui/material';
-import { Add as AddIcon } from '@mui/icons-material';
+import { Add as AddIcon, ExpandMore as ExpandMoreIcon, FilterList as FilterListIcon } from '@mui/icons-material';
 import { usePagos } from '../../hooks/usePagos';
 import PagosTable from '../../components/pagos/PagosTable';
 import PagoForm from '../../components/pagos/PagoForm';
@@ -151,11 +154,21 @@ function Pagos() {
         </Button>
       </Box>
 
-      <PagosFilters
-        filters={filters}
-        onFilterChange={handleFilterChange}
-        onClearFilters={handleClearFilters}
-      />
+      <Accordion defaultCollapsed disableGutters>
+        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <Stack direction="row" alignItems="center" gap={1}>
+            <FilterListIcon fontSize="small" />
+            <Typography>Filtros</Typography>
+          </Stack>
+        </AccordionSummary>
+        <AccordionDetails>
+          <PagosFilters
+            filters={filters}
+            onFilterChange={handleFilterChange}
+            onClearFilters={handleClearFilters}
+          />
+        </AccordionDetails>
+      </Accordion>
 
       <PagosTable
         pagos={pagos}
