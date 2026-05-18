@@ -40,6 +40,7 @@ import {
   Save as SaveIcon,
   Close as CloseIcon,
   ExpandMore as ExpandMoreIcon,
+  FilterList as FilterListIcon,
 } from '@mui/icons-material';
 import * as claseService from '../../services/claseService';
 import { Alert, Snackbar } from '@mui/material';
@@ -414,11 +415,35 @@ function Clases() {
         )}
       </Box>
 
-<Accordion defaultCollapsed disableGutters>
-        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <Typography>Filtros</Typography>
+<Accordion 
+        defaultExpanded={false}
+        disableGutters 
+        sx={{ 
+          backgroundColor: 'rgba(255, 255, 255, 0.95)', 
+          borderRadius: '8px !important',
+          boxShadow: 'none',
+          '&:before': { display: 'none' },
+          mb: 1,
+          '& .MuiAccordionSummary-root': {
+            minHeight: 40,
+            p: '0 8px',
+          },
+          '& .MuiAccordionSummary-content': {
+            my: 1,
+          },
+        }}
+      >
+        <AccordionSummary 
+          expandIcon={<ExpandMoreIcon />}
+          sx={{ 
+            minHeight: 40, 
+            p: '0 8px',
+          }}
+        >
+          <FilterListIcon sx={{ mr: 1, fontSize: 20, color: 'primary.main' }} />
+          <Typography sx={{ fontWeight: 500 }}>Filtros</Typography>
         </AccordionSummary>
-        <AccordionDetails>
+        <AccordionDetails sx={{ p: '8px !important' }}>
           <ClasesFilters
             filters={filters}
             onFilterChange={setFilters}
@@ -440,7 +465,7 @@ function Clases() {
               </Typography>
             ) : (
               clases.map((clase) => (
-                <Card variant="outlined" key={clase.id_clase || clase.id}>
+                <Card variant="outlined" key={clase.id_clase || clase.id} sx={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', borderRadius: 2 }}>
                   <CardContent>
                     <Typography variant="h6" gutterBottom>
                       {getGrupoNombre(clase)}
@@ -484,7 +509,7 @@ function Clases() {
         </>
       ) : (
         <>
-          <TableContainer component={Paper}>
+          <TableContainer component={Paper} sx={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', borderRadius: 2 }}>
             <Table>
               <TableHead>
                 <TableRow>

@@ -46,6 +46,7 @@ import {
   Payment as PaymentIcon,
   Info as InfoIcon,
   ExpandMore as ExpandMoreIcon,
+  FilterList as FilterListIcon,
 } from '@mui/icons-material';
 import * as alumnoService from '../../services/alumnoService';
 import * as tutorService from '../../services/tutorService';
@@ -291,11 +292,35 @@ function Alumnos() {
 
       {/* Filtros de membresía - para admin y recepcionista */}
       {canViewMembershipStatus && (
-        <Accordion defaultCollapsed disableGutters>
-          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Typography>Filtros</Typography>
+        <Accordion 
+          defaultExpanded={false}
+          disableGutters 
+          sx={{ 
+            backgroundColor: 'rgba(255, 255, 255, 0.95)', 
+            borderRadius: '8px !important',
+            boxShadow: 'none',
+            '&:before': { display: 'none' },
+            mb: 1,
+            '& .MuiAccordionSummary-root': {
+              minHeight: 40,
+              p: '0 8px',
+            },
+            '& .MuiAccordionSummary-content': {
+              my: 1,
+            },
+          }}
+        >
+          <AccordionSummary 
+            expandIcon={<ExpandMoreIcon />}
+            sx={{ 
+              minHeight: 40, 
+              p: '0 8px',
+            }}
+          >
+            <FilterListIcon sx={{ mr: 1, fontSize: 20, color: 'primary.main' }} />
+            <Typography sx={{ fontWeight: 500 }}>Filtros</Typography>
           </AccordionSummary>
-          <AccordionDetails>
+          <AccordionDetails sx={{ p: '8px !important' }}>
             <FiltrosAlumnos
               alumnos={alumnos}
               estadosSeleccionados={estadosFiltro}
@@ -325,7 +350,7 @@ function Alumnos() {
                 <Card 
                   variant="outlined"
                   key={alumno.id_alumno}
-                  sx={{ cursor: 'pointer' }}
+                  sx={{ cursor: 'pointer', backgroundColor: 'rgba(255, 255, 255, 0.9)', borderRadius: 2 }}
                   onClick={() => handleOpenDetailDialog(alumno)}
                 >
                   <CardContent>
@@ -383,7 +408,7 @@ function Alumnos() {
         </>
       ) : (
         <>
-          <TableContainer component={Paper}>
+          <TableContainer component={Paper} sx={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', borderRadius: 2 }}>
             <Table>
               <TableHead>
                 <TableRow>

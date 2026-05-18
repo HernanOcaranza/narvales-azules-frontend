@@ -139,7 +139,7 @@ function MembresiasTable({
             const precio = getPrecio(membresia);
             const vencimientoProximo = isVencimientoProximo(membresia.fecha_fin);
             return (
-              <Card key={membresia.id_membrecia} variant="outlined">
+              <Card key={membresia.id_membrecia} variant="outlined" sx={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', borderRadius: 2 }}>
                 <CardContent>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
                     <Typography variant="h6">
@@ -210,7 +210,7 @@ function MembresiasTable({
   }
 
   return (
-    <TableContainer component={Paper}>
+    <TableContainer component={Paper} sx={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', borderRadius: 2 }}>
       <Table>
         <TableHead>
           <TableRow>

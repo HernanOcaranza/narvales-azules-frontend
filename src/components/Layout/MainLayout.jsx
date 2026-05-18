@@ -33,6 +33,7 @@ import {
   Logout as LogoutIcon,
   CardMembership as CardMembershipIcon,
   PriceCheck as PriceCheckIcon,
+  Pool as PoolIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ROUTES } from '../../utils/constants';
@@ -41,11 +42,26 @@ import { usePermission } from '../../hooks/usePermission';
 
 const DRAWER_WIDTH = 240;
 
+const ROUTES_TITLES = {
+  [ROUTES.DASHBOARD]: 'Estadísticas',
+  [ROUTES.ALUMNOS]: 'Alumnos',
+  [ROUTES.MEMBRESIAS]: 'Membresías',
+  [ROUTES.PAGOS]: 'Pagos',
+  [ROUTES.CLASES]: 'Clases',
+  [ROUTES.GRUPOS]: 'Grupos',
+  [ROUTES.EMPLEADOS]: 'Empleados',
+  [ROUTES.CONFIGURACION_DISCIPLINAS]: 'Disciplinas',
+  [ROUTES.CONFIGURACION_CATEGORIAS]: 'Categorías',
+  [ROUTES.CONFIGURACION_CONDICIONES]: 'Condiciones',
+  [ROUTES.CONFIGURACION_TIPO_MEMBRESIAS]: 'Tipos de Membresía',
+  [ROUTES.CONFIGURACION_PRECIO_MEMBRESIAS]: 'Precios de Membresía',
+};
+
 const allMenuItems = [
   {
     key: ROUTES.DASHBOARD,
     icon: <DashboardIcon />,
-    label: 'Dashboard',
+    label: 'Estadisticas',
     roles: ['admin'],
   },
   {
@@ -174,15 +190,16 @@ function MainLayout({ children }) {
     <Box>
       <Toolbar
         sx={{
-          backgroundColor: 'primary.main',
-          color: 'white',
+          background: 'linear-gradient(135deg, #0D7CAD 0%, #3AA8D0 100%)',
+          color: '#FFFFFF',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           minHeight: '64px !important',
         }}
       >
-        <Typography variant="h6" noWrap component="div" fontWeight="bold">
+        <PoolIcon sx={{ mr: 1, fontSize: 24 }} />
+        <Typography variant="h6" noWrap component="div" fontWeight="bold" sx={{ color: '#FFFFFF' }}>
           Natatorio
         </Typography>
       </Toolbar>
@@ -193,21 +210,26 @@ function MainLayout({ children }) {
               selected={location.pathname === item.key}
               onClick={() => handleMenuClick(item.key)}
               sx={{
+                color: '#0D3244',
+                '& .MuiListItemIcon-root': {
+                  color: 'text.secondary',
+                },
                 '&.Mui-selected': {
-                  backgroundColor: 'primary.light',
-                  color: 'white',
+                  backgroundColor: 'rgba(13, 124, 173, 0.1)',
+                  color: '#0D7CAD',
+                  fontWeight: 600,
                   '&:hover': {
-                    backgroundColor: 'primary.main',
+                    backgroundColor: 'rgba(13, 124, 173, 0.15)',
                   },
                   '& .MuiListItemIcon-root': {
-                    color: 'white',
+                    color: '#0D7CAD',
                   },
                 },
               }}
             >
               <ListItemIcon
                 sx={{
-                  color: location.pathname === item.key ? 'white' : 'inherit',
+                  color: location.pathname === item.key ? '#0D7CAD' : 'text.secondary',
                 }}
               >
                 {item.icon}
@@ -225,21 +247,26 @@ function MainLayout({ children }) {
                 onClick={handleConfigToggle}
                 selected={isConfigRoute}
                 sx={{
+                  color: '#0D3244',
+                  '& .MuiListItemIcon-root': {
+                    color: 'text.secondary',
+                  },
                   '&.Mui-selected': {
-                    backgroundColor: 'primary.light',
-                    color: 'white',
+                    backgroundColor: 'rgba(13, 124, 173, 0.1)',
+                    color: '#0D7CAD',
+                    fontWeight: 600,
                     '&:hover': {
-                      backgroundColor: 'primary.main',
+                      backgroundColor: 'rgba(13, 124, 173, 0.15)',
                     },
                     '& .MuiListItemIcon-root': {
-                      color: 'white',
+                      color: '#0D7CAD',
                     },
                   },
                 }}
               >
                 <ListItemIcon
                   sx={{
-                    color: isConfigRoute ? 'white' : 'inherit',
+                    color: isConfigRoute ? '#0D7CAD' : 'text.secondary',
                   }}
                 >
                   <SettingsIcon />
@@ -257,21 +284,26 @@ function MainLayout({ children }) {
                   onClick={() => handleMenuClick(item.key)}
                   sx={{
                     pl: 4,
+                    color: '#0D3244',
+                    '& .MuiListItemIcon-root': {
+                      color: 'text.secondary',
+                    },
                     '&.Mui-selected': {
-                      backgroundColor: 'primary.light',
-                      color: 'white',
+                      backgroundColor: 'rgba(13, 124, 173, 0.1)',
+                      color: '#0D7CAD',
+                      fontWeight: 600,
                       '&:hover': {
-                        backgroundColor: 'primary.main',
+                        backgroundColor: 'rgba(13, 124, 173, 0.15)',
                       },
                       '& .MuiListItemIcon-root': {
-                        color: 'white',
+                        color: '#0D7CAD',
                       },
                     },
                   }}
                 >
                   <ListItemIcon
                     sx={{
-                      color: isConfigSelected(item.key) ? 'white' : 'inherit',
+                      color: isConfigSelected(item.key) ? '#0D7CAD' : 'text.secondary',
                     }}
                   >
                     {item.icon}
@@ -293,8 +325,11 @@ function MainLayout({ children }) {
       <AppBar
         position="fixed"
         sx={{
-          width: { md: `calc(100% - ${DRAWER_WIDTH}px)` },
-          ml: { md: `${DRAWER_WIDTH}px` },
+          width: '100%',
+          ml: { md: 0 },
+          background: 'linear-gradient(135deg, #0D7CAD 0%, #3AA8D0 100%)',
+          color: '#FFFFFF',
+          boxShadow: '0 2px 12px rgba(13, 124, 173, 0.25)',
         }}
       >
         <Toolbar>
@@ -303,19 +338,19 @@ function MainLayout({ children }) {
             aria-label="open drawer"
             edge="start"
             onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { md: 'none' } }}
+            sx={{ mr: 2, display: { md: 'none' }, color: '#FFFFFF' }}
           >
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            Sistema de Gestión de Natatorio
+          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1, color: '#FFFFFF' }}>
+            {ROUTES_TITLES[location.pathname] || 'Sistema de Gestión de Natatorio'}
           </Typography>
           {user && (
-            <Typography variant="body2" sx={{ mr: 2, display: { xs: 'none', sm: 'block' } }}>
+            <Typography variant="body2" sx={{ mr: 2, display: { xs: 'none', sm: 'block' }, color: 'rgba(255, 255, 255, 0.9)' }}>
               {user.usuario || user.nombre || 'Usuario'}
             </Typography>
           )}
-          <IconButton color="inherit" onClick={handleLogout} title="Cerrar sesión">
+          <IconButton color="inherit" onClick={handleLogout} title="Cerrar sesión" sx={{ color: '#FFFFFF', '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.15)' } }}>
             <LogoutIcon />
           </IconButton>
         </Toolbar>
@@ -329,13 +364,14 @@ function MainLayout({ children }) {
           open={mobileOpen}
           onClose={handleDrawerToggle}
           ModalProps={{
-            keepMounted: true, // Better open performance on mobile.
+            keepMounted: true,
           }}
           sx={{
-            display: { xs: 'block', md: 'none' },
+            display: { xs: 'block', md: 'block' },
             '& .MuiDrawer-paper': {
-              boxSizing: 'border-box',
-              width: DRAWER_WIDTH,
+              backgroundColor: 'rgba(255, 255, 255, 0.98)',
+              boxShadow: '2px 0 12px rgba(13, 124, 173, 0.08)',
+              borderRight: '1px solid rgba(13, 124, 173, 0.1)',
             },
           }}
         >
@@ -344,10 +380,11 @@ function MainLayout({ children }) {
         <Drawer
           variant="permanent"
           sx={{
-            display: { xs: 'none', md: 'block' },
+            display: { xs: 'block', md: 'block' },
             '& .MuiDrawer-paper': {
-              boxSizing: 'border-box',
-              width: DRAWER_WIDTH,
+              backgroundColor: 'rgba(255, 255, 255, 0.98)',
+              boxShadow: '2px 0 12px rgba(13, 124, 173, 0.08)',
+              borderRight: '1px solid rgba(13, 124, 173, 0.1)',
             },
           }}
           open
@@ -361,7 +398,9 @@ function MainLayout({ children }) {
           flexGrow: 1,
           p: 0,
           width: '100%',
+          maxWidth: '100%',
           mt: '64px',
+          overflow: 'hidden',
         }}
       >
         {children}

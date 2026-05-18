@@ -112,32 +112,28 @@ function Dashboard() {
     membresiasPorVencer: 0,
   };
 
-  const statCards = [
+const statCards = [
     {
       title: 'Total Alumnos',
       value: stats.totalAlumnos,
-      icon: <PeopleIcon sx={{ fontSize: 40 }} />,
       color: '#1976d2',
       subtitle: 'Activos',
     },
     {
       title: 'Membresías Activas',
       value: stats.membresiasActivas,
-      icon: <CreditCardIcon sx={{ fontSize: 40 }} />,
       color: '#2e7d32',
-      subtitle: stats.membresiasPorVencer > 0 ? `${stats.membresiasPorVencer} por vencer` : 'Vigentes',
+      subtitle: stats.membresiasPorVencer > 0 ? `${stats.membresiasPorVencer} por vencer` : 'Vigente'
     },
     {
       title: 'Ingresos del Mes',
       value: formatCurrency(stats.ingresosMes),
-      icon: <AttachMoneyIcon sx={{ fontSize: 40 }} />,
       color: '#388e3c',
       subtitle: stats.pagosPendientes > 0 ? `${stats.pagosPendientes} pendientes` : 'Completado',
     },
     {
       title: 'Clases Hoy',
       value: stats.clasesHoy,
-      icon: <EventIcon sx={{ fontSize: 40 }} />,
       color: '#7b1fa2',
       subtitle: 'Programadas',
     },
@@ -148,26 +144,23 @@ function Dashboard() {
       title: 'Ingresos',
       value: formatCurrency(stats.ingresosMes),
       color: '#2e7d32',
-      icon: <TrendingUpIcon />,
     },
     {
       title: 'Egresos',
       value: formatCurrency(stats.egresosMes),
       color: '#d32f2f',
-      icon: <AttachMoneyIcon />,
     },
     {
       title: 'Ganancia Neta',
       value: formatCurrency(stats.gananciaNeta),
       color: stats.gananciaNeta >= 0 ? '#1976d2' : '#d32f2f',
-      icon: stats.gananciaNeta >= 0 ? <CheckCircleIcon /> : <WarningIcon />,
     },
   ];
 
   return (
     <Box sx={{ p: 3 }}>
       <Typography variant="h4" component="h2" gutterBottom sx={{ mb: 3, fontWeight: 600 }}>
-        Dashboard
+        Estadisticas
       </Typography>
 
       <Grid container spacing={2} sx={{ mb: 4 }}>
@@ -178,6 +171,9 @@ function Dashboard() {
                 height: '100%',
                 display: 'flex',
                 flexDirection: 'column',
+                border: `2px solid ${stat.color}`,
+                borderRadius: 2,
+                bgcolor: stat.color + '08',
                 transition: 'transform 0.2s, box-shadow 0.2s',
                 '&:hover': {
                   transform: 'translateY(-4px)',
@@ -191,17 +187,16 @@ function Dashboard() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    mb: 2,
+                    mb: 1,
                   }}
                 >
-                  <Box sx={{ color: stat.color }}>{stat.icon}</Box>
                   {stat.title === 'Membresías Activas' && stats.membresiasPorVencer > 0 && (
                     <Chip
                       size="small"
-                      icon={<WarningIcon sx={{ fontSize: 16 }} />}
                       label={`${stats.membresiasPorVencer} por vencer`}
                       color="warning"
                       variant="outlined"
+                      sx={{ fontWeight: 500 }}
                     />
                   )}
                 </Box>
@@ -223,7 +218,12 @@ function Dashboard() {
       <Grid container spacing={2} sx={{ mb: 4 }}>
         {financieraCards.map((card, index) => (
           <Grid item xs={12} sm={4} key={index}>
-            <Card sx={{ height: '100%' }}>
+            <Card sx={{ 
+                height: '100%', 
+                border: `2px solid ${card.color}`,
+                borderRadius: 2,
+                bgcolor: card.color + '08',
+              }}>
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <Box>
@@ -234,9 +234,6 @@ function Dashboard() {
                       {card.value}
                     </Typography>
                   </Box>
-                  <Avatar sx={{ bgcolor: `${card.color}20`, color: card.color }}>
-                    {card.icon}
-                  </Avatar>
                 </Box>
               </CardContent>
             </Card>
@@ -246,9 +243,14 @@ function Dashboard() {
 
       <Grid container spacing={2} sx={{ mb: 4 }}>
         <Grid item xs={12} md={6}>
-          <Card sx={{ height: '100%' }}>
+          <Card sx={{ 
+            height: '100%', 
+            border: '2px solid #1976d2',
+            borderRadius: 2,
+            bgcolor: '#1976d208',
+          }}>
             <CardContent>
-              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, color: '#1976d2' }}>
                 Alumnos por Disciplina
               </Typography>
               {data?.disciplinas?.length > 0 ? (
@@ -290,9 +292,14 @@ function Dashboard() {
         </Grid>
 
         <Grid item xs={12} md={6}>
-          <Card sx={{ height: '100%' }}>
+          <Card sx={{ 
+            height: '100%', 
+            border: '2px solid #2e7d32',
+            borderRadius: 2,
+            bgcolor: '#2e7d3208',
+          }}>
             <CardContent>
-              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, color: '#2e7d32' }}>
                 Miembros por Categoría
               </Typography>
               {data?.categorias?.length > 0 ? (
@@ -338,10 +345,14 @@ function Dashboard() {
 
       <Grid container spacing={2}>
         <Grid item xs={12} md={6}>
-          <Card>
+          <Card sx={{ 
+            border: '2px solid #7b1fa2',
+            borderRadius: 2,
+            bgcolor: '#7b1fa208',
+          }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                <Typography variant="h6" sx={{ fontWeight: 600, color: '#7b1fa2' }}>
                   Últimas Membresías
                 </Typography>
               </Box>
@@ -351,8 +362,8 @@ function Dashboard() {
                   {data.ultimasMembresias.slice(0, 5).map((m, index) => (
                     <ListItem key={index} disablePadding sx={{ py: 1 }}>
                       <ListItemAvatar>
-                        <Avatar sx={{ bgcolor: '#1976d2' }}>
-                          <PersonIcon />
+                        <Avatar sx={{ bgcolor: '#1976d2', fontWeight: 600 }}>
+                          {m.alumno?.nombre?.charAt(0)}{m.alumno?.apellido?.charAt(0)}
                         </Avatar>
                       </ListItemAvatar>
                       <ListItemText
@@ -377,10 +388,14 @@ function Dashboard() {
         </Grid>
 
         <Grid item xs={12} md={6}>
-          <Card>
+          <Card sx={{ 
+            border: '2px solid #ed6c02',
+            borderRadius: 2,
+            bgcolor: '#ed6c0208',
+          }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                <Typography variant="h6" sx={{ fontWeight: 600, color: '#ed6c02' }}>
                   Próximas Clases
                 </Typography>
               </Box>
@@ -390,8 +405,8 @@ function Dashboard() {
                   {data.ultimasClases.slice(0, 5).map((clase, index) => (
                     <ListItem key={index} disablePadding sx={{ py: 1 }}>
                       <ListItemAvatar>
-                        <Avatar sx={{ bgcolor: '#7b1fa2' }}>
-                          <EventIcon />
+                        <Avatar sx={{ bgcolor: '#7b1fa2', fontWeight: 600 }}>
+                          {clase.grupo?.nombre?.charAt(0)}
                         </Avatar>
                       </ListItemAvatar>
                       <ListItemText
@@ -424,9 +439,13 @@ function Dashboard() {
 
       <Grid container spacing={2} sx={{ mt: 0 }}>
         <Grid item xs={12} md={4}>
-          <Card>
+          <Card sx={{ 
+            border: '2px solid #0288d1',
+            borderRadius: 2,
+            bgcolor: '#0288d108',
+          }}>
             <CardContent sx={{ textAlign: 'center' }}>
-              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, color: '#0288d1' }}>
                 Asistencia (últimos 7 días)
               </Typography>
               <Box sx={{ position: 'relative', display: 'inline-flex' }}>
@@ -462,9 +481,13 @@ function Dashboard() {
         </Grid>
 
         <Grid item xs={12} md={4}>
-          <Card>
+          <Card sx={{ 
+            border: '2px solid #9c27b0',
+            borderRadius: 2,
+            bgcolor: '#9c27b008',
+          }}>
             <CardContent>
-              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, color: '#9c27b0' }}>
                 Resumen General
               </Typography>
               <TableContainer>
@@ -498,9 +521,13 @@ function Dashboard() {
         </Grid>
 
         <Grid item xs={12} md={4}>
-          <Card>
+          <Card sx={{ 
+            border: '2px solid #d32f2f',
+            borderRadius: 2,
+            bgcolor: '#d32f2f08',
+          }}>
             <CardContent>
-              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, color: '#d32f2f' }}>
                 Membresías por Tipo
               </Typography>
               {data?.membresiaPorTipo?.length > 0 ? (

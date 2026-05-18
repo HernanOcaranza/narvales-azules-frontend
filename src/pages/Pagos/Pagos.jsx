@@ -154,14 +154,35 @@ function Pagos() {
         </Button>
       </Box>
 
-      <Accordion defaultCollapsed disableGutters>
-        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <Stack direction="row" alignItems="center" gap={1}>
-            <FilterListIcon fontSize="small" />
-            <Typography>Filtros</Typography>
-          </Stack>
+      <Accordion 
+        defaultExpanded={false}
+        disableGutters 
+        sx={{ 
+          backgroundColor: 'rgba(255, 255, 255, 0.95)', 
+          borderRadius: '8px !important',
+          boxShadow: 'none',
+          '&:before': { display: 'none' },
+          mb: 1,
+          '& .MuiAccordionSummary-root': {
+            minHeight: 40,
+            p: '0 8px',
+          },
+          '& .MuiAccordionSummary-content': {
+            my: 1,
+          },
+        }}
+      >
+        <AccordionSummary 
+          expandIcon={<ExpandMoreIcon />}
+          sx={{ 
+            minHeight: 40, 
+            p: '0 8px',
+          }}
+        >
+          <FilterListIcon sx={{ mr: 1, fontSize: 20, color: 'primary.main' }} />
+          <Typography sx={{ fontWeight: 500 }}>Filtros</Typography>
         </AccordionSummary>
-        <AccordionDetails>
+        <AccordionDetails sx={{ p: '8px !important' }}>
           <PagosFilters
             filters={filters}
             onFilterChange={handleFilterChange}

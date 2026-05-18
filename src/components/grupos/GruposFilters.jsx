@@ -10,7 +10,7 @@ import {
   Button,
   Grid,
 } from '@mui/material';
-import { FilterList as FilterListIcon, Clear as ClearIcon } from '@mui/icons-material';
+import { Clear as ClearIcon } from '@mui/icons-material';
 import * as disciplinaService from '../../services/disciplinaService';
 import * as categoriaService from '../../services/categoriaService';
 
@@ -64,11 +64,6 @@ function GruposFilters({ filters, onFilterChange, onClearFilters }) {
   return (
     <Box sx={{ mb: 3, p: 2, bgcolor: 'background.paper', borderRadius: 1 }}>
       <Stack spacing={2}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <FilterListIcon />
-          <strong>Filtros</strong>
-        </Box>
-        
         <Grid container spacing={2}>
           <Grid item xs={12} sm={6} md={3}>
             <TextField

@@ -138,7 +138,7 @@ function Empleados() {
             </Typography>
           ) : (
             empleados.map((empleado) => (
-              <Card key={empleado.id_empleado} variant="outlined">
+              <Card key={empleado.id_empleado} variant="outlined" sx={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', borderRadius: 2 }}>
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
                     {empleado.nombre} {empleado.apellido}
@@ -176,7 +176,7 @@ function Empleados() {
           )}
         </Stack>
       ) : (
-        <TableContainer component={Paper}>
+        <TableContainer component={Paper} sx={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', borderRadius: 2 }}>
           <Table>
             <TableHead>
               <TableRow>

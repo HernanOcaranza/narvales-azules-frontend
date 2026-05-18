@@ -11,7 +11,7 @@ import {
   Grid,
   Autocomplete,
 } from '@mui/material';
-import { FilterList as FilterListIcon, Clear as ClearIcon } from '@mui/icons-material';
+import { Clear as ClearIcon } from '@mui/icons-material';
 import * as alumnoService from '../../services/alumnoService';
 import * as grupoService from '../../services/grupoService';
 import * as disciplinaService from '../../services/disciplinaService';
@@ -132,11 +132,6 @@ function MembresiasFilters({ filters, onFilterChange, onClearFilters, tiposMembr
   return (
     <Box sx={{ mb: 3, p: 2, bgcolor: 'background.paper', borderRadius: 1 }}>
       <Stack spacing={2}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <FilterListIcon />
-          <strong>Filtros</strong>
-        </Box>
-        
         <Grid container spacing={2}>
           <Grid item xs={12} sm={6} md={3}>
             <Autocomplete
