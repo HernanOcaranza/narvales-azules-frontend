@@ -1,36 +1,10 @@
 import React from 'react';
-import {
-  Box,
-  Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  IconButton,
-  CircularProgress,
-  Stack,
-  Typography,
-  useMediaQuery,
-  useTheme,
-  Card,
-  CardContent,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  Alert,
-  Snackbar,
-} from '@mui/material';
-import {
-  Add as AddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-} from '@mui/icons-material';
-import * as tipoMembresiasService from '../../services/tipoMembresiasService';
+import { Plus, Edit, Trash2 } from 'lucide-react';
+import * as tipoMembresiaService from '../../services/tipoMembresiasService';
 import TipoMembresiaForm from '../../components/Forms/TipoMembresiaForm';
 import ConfirmDeleteDialog from '../../components/Dialogs/ConfirmDeleteDialog';
+import { formatCurrency } from '../../utils/helpers';
+import { Button, Modal, Spinner, Table, TableHead, TableBody, TableRow, TableHeadCell, TableCell, Chip, Card } from '../../components/ui';
 
 function TipoMembresias() {
   const [tipos, setTipos] = React.useState([]);
@@ -38,253 +12,113 @@ function TipoMembresias() {
   const [openModal, setOpenModal] = React.useState(false);
   const [editingItem, setEditingItem] = React.useState(null);
   const [deleteDialog, setDeleteDialog] = React.useState({ open: false, item: null });
-  const [snackbar, setSnackbar] = React.useState({ open: false, message: '', severity: 'success' });
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const [isMobile, setIsMobile] = React.useState(false);
 
   React.useEffect(() => {
-    loadTipos();
+    const checkMobile = () => setIsMobile(window.innerWidth < 640);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  React.useEffect(() => { loadTipos(); }, []);
 
   const loadTipos = async () => {
     setLoading(true);
     try {
-      const data = await tipoMembresiasService.getAll();
-      setTipos(Array.isArray(data) ? data : []);
+      const data = await tipoMembresiaService.getAll({ limit: 100 });
+      const tiposData = data?.data?.data || data?.data || data || [];
+      setTipos(Array.isArray(tiposData) ? tiposData : []);
     } catch (error) {
       console.error('Error al cargar tipos de membresía:', error);
       setTipos([]);
-      setSnackbar({
-        open: true,
-        message: 'Error al cargar los tipos de membresía. Por favor, intente nuevamente.',
-        severity: 'error',
-      });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleOpenModal = (item = null) => {
-    setEditingItem(item);
-    setOpenModal(true);
-  };
-
-  const handleCloseModal = () => {
-    setOpenModal(false);
-    setEditingItem(null);
-  };
-
-  const handleSuccess = () => {
-    handleCloseModal();
-    loadTipos();
-    setSnackbar({
-      open: true,
-      message: editingItem ? 'Tipo de membresía actualizado correctamente' : 'Tipo de membresía creado correctamente',
-      severity: 'success',
-    });
-  };
-
-  const handleDeleteClick = (item) => {
-    setDeleteDialog({ open: true, item });
-  };
-
+  const handleOpenModal = (item = null) => { setEditingItem(item); setOpenModal(true); };
+  const handleCloseModal = () => { setOpenModal(false); setEditingItem(null); };
+  const handleSuccess = () => { handleCloseModal(); loadTipos(); };
+  const handleDeleteClick = (item) => setDeleteDialog({ open: true, item });
+  const handleDeleteCancel = () => setDeleteDialog({ open: false, item: null });
   const handleDeleteConfirm = async () => {
     if (deleteDialog.item) {
       try {
-        await tipoMembresiasService.deleteById(deleteDialog.item.id_tipo_membrecia);
+        await tipoMembresiaService.deleteById(deleteDialog.item.id_tipo_membrecia);
         setDeleteDialog({ open: false, item: null });
         loadTipos();
-        setSnackbar({
-          open: true,
-          message: 'Tipo de membresía eliminado correctamente',
-          severity: 'success',
-        });
       } catch (error) {
-        console.error('Error al eliminar tipo de membresía:', error);
-        setSnackbar({
-          open: true,
-          message: error.message || 'Error al eliminar el tipo de membresía. Por favor, intente nuevamente.',
-          severity: 'error',
-        });
+        alert('Error al eliminar el tipo de membresía.');
       }
     }
   };
 
-  const handleDeleteCancel = () => {
-    setDeleteDialog({ open: false, item: null });
-  };
-
   return (
-    <Box>
-      <Box
-        sx={{
-          mb: 3,
-          display: 'flex',
-          justifyContent: 'flex-end',
-        }}
-      >
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => handleOpenModal()}>
-          Nuevo Tipo de Membresía
-        </Button>
-      </Box>
-
+    <div>
+      <div className="flex justify-end mb-4">
+        <Button variant="primary" icon={Plus} onClick={() => handleOpenModal()}>Nuevo Tipo de Membresía</Button>
+      </div>
       {loading ? (
-        <Box display="flex" justifyContent="center" p={4}>
-          <CircularProgress />
-        </Box>
+        <div className="flex justify-center p-8"><Spinner size="lg" /></div>
       ) : isMobile ? (
-        <Stack spacing={2}>
-          {tipos.length === 0 ? (
-            <Typography variant="body1" color="text.secondary" textAlign="center" p={4}>
-              No hay tipos de membresía registrados
-            </Typography>
-          ) : (
-            tipos.map((tipo) => (
-              <Card key={tipo.id_tipo_membrecia}>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom>
-                    {tipo.tipo_membrecia || `Tipo ${tipo.id_tipo_membrecia}`}
-                  </Typography>
-                  {tipo.frecuencia_semanal !== null && tipo.frecuencia_semanal !== undefined && (
-                    <Typography variant="body2" color="text.secondary" gutterBottom>
-                      Frecuencia semanal: {tipo.frecuencia_semanal} veces
-                    </Typography>
-                  )}
-                  {tipo.duracion_dias !== null && tipo.duracion_dias !== undefined && (
-                    <Typography variant="body2" color="text.secondary" gutterBottom>
-                      Duración: {tipo.duracion_dias} días
-                    </Typography>
-                  )}
-                  <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
-                    <IconButton
-                      size="small"
-                      color="primary"
-                      onClick={() => handleOpenModal(tipo)}
-                    >
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton
-                      size="small"
-                      color="error"
-                      onClick={() => handleDeleteClick(tipo)}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </Box>
-                </CardContent>
+        <div className="space-y-3">
+          {tipos.map((item) => {
+            const precioActual = item.precios?.find(p => p.estado === 1);
+            return (
+              <Card key={item.id_tipo_membrecia} hover>
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-text-primary">{item.tipo_membrecia}</h3>
+                  <p className="text-sm text-text-secondary">Frecuencia: {item.frecuencia_semanal ? `${item.frecuencia_semanal} veces/semana` : 'N/A'}</p>
+                  <p className="text-sm text-text-secondary">Duración: {item.duracion_dias ? `${item.duracion_dias} días` : 'N/A'}</p>
+                  <p className="text-sm font-medium text-primary-main">Precio: {precioActual ? formatCurrency(precioActual.precio) : 'Sin precio'}</p>
+                  <div className="flex gap-2 mt-2">
+                    <Button size="sm" icon={Edit} onClick={() => handleOpenModal(item)}>Editar</Button>
+                    <Button size="sm" variant="danger" icon={Trash2} onClick={() => handleDeleteClick(item)}>Eliminar</Button>
+                  </div>
+                </div>
               </Card>
-            ))
-          )}
-        </Stack>
+            );
+          })}
+        </div>
       ) : (
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>ID</TableCell>
-                <TableCell>Tipo de Membresía</TableCell>
-                <TableCell>Frecuencia Semanal</TableCell>
-                <TableCell>Duración (días)</TableCell>
-                <TableCell>Descripción</TableCell>
-                <TableCell align="right">Acciones</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {tipos.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} align="center">
-                    <Typography variant="body1" color="text.secondary" p={2}>
-                      No hay tipos de membresía registrados
-                    </Typography>
+        <Table>
+          <TableHead>
+<TableRow>
+            <TableHeadCell>Nombre</TableHeadCell>
+            <TableHeadCell>Frecuencia Semanal</TableHeadCell>
+            <TableHeadCell>Duración (días)</TableHeadCell>
+            <TableHeadCell>Precio</TableHeadCell>
+            <TableHeadCell className="text-right">Acciones</TableHeadCell>
+          </TableRow>
+          </TableHead>
+          <TableBody>
+            {tipos.map((item) => {
+              const precioActual = item.precios?.find(p => p.estado === 1);
+              return (
+                <TableRow key={item.id_tipo_membrecia} hover>
+                  <TableCell className="font-medium">{item.tipo_membrecia}</TableCell>
+                  <TableCell>{item.frecuencia_semanal ? `${item.frecuencia_semanal} veces` : '-'}</TableCell>
+                  <TableCell>{item.duracion_dias || '-'}</TableCell>
+                  <TableCell className="font-medium text-primary-main">{precioActual ? formatCurrency(precioActual.precio) : 'Sin precio'}</TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-1">
+                      <button onClick={() => handleOpenModal(item)} className="p-1.5 rounded-lg hover:bg-primary-main/10 text-primary-main"><Edit className="w-4 h-4" /></button>
+                      <button onClick={() => handleDeleteClick(item)} className="p-1.5 rounded-lg hover:bg-red-100 text-red-600"><Trash2 className="w-4 h-4" /></button>
+                    </div>
                   </TableCell>
                 </TableRow>
-              ) : (
-                tipos.map((tipo) => (
-                  <TableRow key={tipo.id_tipo_membrecia} hover>
-                    <TableCell>{tipo.id_tipo_membrecia}</TableCell>
-                    <TableCell>
-                      <Typography variant="body2" fontWeight="medium">
-                        {tipo.tipo_membrecia || `Tipo ${tipo.id_tipo_membrecia}`}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>{tipo.frecuencia_semanal !== null && tipo.frecuencia_semanal !== undefined ? tipo.frecuencia_semanal : '-'}</TableCell>
-                    <TableCell>{tipo.duracion_dias !== null && tipo.duracion_dias !== undefined ? tipo.duracion_dias : '-'}</TableCell>
-                    <TableCell>-</TableCell>
-                    <TableCell align="right">
-                      <Stack direction="row" spacing={1} justifyContent="flex-end">
-                        <IconButton
-                          size="small"
-                          color="primary"
-                          onClick={() => handleOpenModal(tipo)}
-                        >
-                          <EditIcon />
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          color="error"
-                          onClick={() => handleDeleteClick(tipo)}
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </Stack>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+              );
+            })}
+          </TableBody>
+        </Table>
       )}
-
-      {/* Modal para crear/editar tipo de membresía */}
-      <Dialog
-        open={openModal}
-        onClose={handleCloseModal}
-        maxWidth="sm"
-        fullWidth
-        fullScreen={isMobile}
-      >
-        <DialogTitle>
-          {editingItem ? 'Editar Tipo de Membresía' : 'Nuevo Tipo de Membresía'}
-        </DialogTitle>
-        <DialogContent>
-          <Box sx={{ pt: 2 }}>
-            <TipoMembresiaForm
-              onSuccess={handleSuccess}
-              onCancel={handleCloseModal}
-              initialData={editingItem}
-            />
-          </Box>
-        </DialogContent>
-      </Dialog>
-
-      {/* Dialog de confirmación para eliminar */}
-      <ConfirmDeleteDialog
-        open={deleteDialog.open}
-        onClose={handleDeleteCancel}
-        onConfirm={handleDeleteConfirm}
-        title="el tipo de membresía"
-        itemName={deleteDialog.item?.tipo_membrecia || `#${deleteDialog.item?.id_tipo_membrecia || ''}`}
-      />
-
-      {/* Snackbar para notificaciones */}
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={6000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-      >
-        <Alert
-          onClose={() => setSnackbar({ ...snackbar, open: false })}
-          severity={snackbar.severity}
-          sx={{ width: '100%' }}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
-    </Box>
+      <Modal open={openModal} onClose={handleCloseModal} title={editingItem ? 'Editar Tipo de Membresía' : 'Nuevo Tipo de Membresía'} size="md">
+        <TipoMembresiaForm onSuccess={handleSuccess} onCancel={handleCloseModal} initialData={editingItem} />
+      </Modal>
+      <ConfirmDeleteDialog open={deleteDialog.open} onClose={handleDeleteCancel} onConfirm={handleDeleteConfirm} title="el tipo de membresía" itemName={deleteDialog.item?.tipo_membrecia || ''} />
+    </div>
   );
 }
 
 export default TipoMembresias;
-

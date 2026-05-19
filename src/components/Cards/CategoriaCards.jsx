@@ -1,59 +1,28 @@
 import React from 'react';
-import {
-  Stack,
-  Typography,
-  Card,
-  CardContent,
-  Box,
-  IconButton,
-} from '@mui/material';
-import { Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import { Edit, Trash2 } from 'lucide-react';
+import { Card } from '../ui';
 
-/**
- * Componente de tarjetas para mostrar categorías en móvil
- * @param {Array} categorias - Lista de categorías
- * @param {function} onEdit - Función para editar una categoría
- * @param {function} onDelete - Función para eliminar una categoría
- */
-function CategoriaCards({ categorias, onEdit, onDelete }) {
-  if (categorias.length === 0) {
-    return (
-      <Typography variant="body1" color="text.secondary" textAlign="center" p={4}>
-        No hay categorías registradas
-      </Typography>
-    );
-  }
-
+export default function CategoriaCards({ categorias = [], onEdit, onDelete }) {
   return (
-    <Stack spacing={2}>
-      {categorias.map((categoria) => (
-        <Card key={categoria.id_categoria} variant="outlined" sx={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', borderRadius: 2 }}>
-          <CardContent>
-            <Typography variant="h6" gutterBottom>
-              {categoria.categoria}
-            </Typography>
-            <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
-              <IconButton
-                size="small"
-                color="primary"
-                onClick={() => onEdit(categoria)}
-              >
-                <EditIcon />
-              </IconButton>
-              <IconButton
-                size="small"
-                color="error"
-                onClick={() => onDelete(categoria)}
-              >
-                <DeleteIcon />
-              </IconButton>
-            </Box>
-          </CardContent>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {categorias.map((item) => (
+        <Card key={item.id_categoria} hover>
+          <div className="flex justify-between items-start">
+            <div>
+              <h3 className="font-semibold text-text-primary">{item.categoria}</h3>
+              <p className="text-sm text-text-secondary mt-1">{item.descripcion || item.descripcion_categoria || 'Sin descripción'}</p>
+            </div>
+          </div>
+          <div className="flex gap-2 mt-3">
+            <button onClick={() => onEdit(item)} className="p-2 rounded-lg hover:bg-primary-main/10 text-primary-main">
+              <Edit className="w-4 h-4" />
+            </button>
+            <button onClick={() => onDelete(item)} className="p-2 rounded-lg hover:bg-red-100 text-red-600">
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
         </Card>
       ))}
-    </Stack>
+    </div>
   );
 }
-
-export default CategoriaCards;
-

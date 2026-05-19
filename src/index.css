@@ -1,25 +1,21 @@
-* {
-  box-sizing: border-box;
-}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
 
-html, body, #root {
-  min-height: 100vh;
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  overflow-x: hidden;
-}
+@theme {
+  --color-primary-main: #0D7CAD;
+  --color-primary-light: #3AA8D0;
+  --color-primary-dark: #085A7D;
+  --color-secondary-main: #8DCDE5;
+  --color-secondary-light: #B8E4F5;
+  --color-secondary-dark: #5BA8C9;
+  --color-background: #DCEFF7;
+  --color-text-primary: #0D3244;
+  --color-text-secondary: #4A7A8C;
 
-body {
-  font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  background-image: url('/background.svg');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
-  background-color: #DCEFF7;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  --font-family-sans: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+  --radius-default: 8px;
+  --radius-card: 12px;
 }
 
 ::-webkit-scrollbar {
@@ -38,6 +34,24 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(13, 124, 173, 0.5);
+}
+
+body {
+  background-image: url('./assets/background.svg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  background-color: #DCEFF7;
+  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+html, body, #root {
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  overflow-x: auto;
 }
 
 ::selection {

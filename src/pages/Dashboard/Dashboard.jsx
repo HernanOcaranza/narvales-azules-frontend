@@ -1,40 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Grid,
-  Card,
-  CardContent,
-  Typography,
-  Box,
-  CircularProgress,
-  Paper,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemAvatar,
-  Avatar,
-  Chip,
-  LinearProgress,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Divider,
-} from '@mui/material';
-import {
-  People as PeopleIcon,
-  CreditCard as CreditCardIcon,
-  AttachMoney as AttachMoneyIcon,
-  Event as EventIcon,
-  Group as GroupIcon,
-  Person as PersonIcon,
-  TrendingUp as TrendingUpIcon,
-  Warning as WarningIcon,
-  CheckCircle as CheckCircleIcon,
-  Schedule as ScheduleIcon,
-} from '@mui/icons-material';
+  Users,
+  CreditCard,
+  DollarSign,
+  BookOpen,
+  Group,
+  User,
+  TrendingUp,
+  AlertCircle,
+  CheckCircle,
+  Clock,
+} from 'lucide-react';
 import dashboardService from '../../services/dashboardService';
+import { Card, LinearProgress, CircularProgress } from '../../components/ui';
 
 const formatCurrency = (value) => {
   return new Intl.NumberFormat('es-AR', {
@@ -51,6 +29,8 @@ const formatDate = (dateStr) => {
     month: 'short',
   });
 };
+
+const colors = ['#1976d2', '#2e7d32', '#d32f2f', '#7b1fa2', '#ed6c02', '#0288d1'];
 
 function Dashboard() {
   const [loading, setLoading] = useState(true);
@@ -75,24 +55,17 @@ function Dashboard() {
 
   if (loading) {
     return (
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          minHeight: '60vh',
-        }}
-      >
-        <CircularProgress />
-      </Box>
+      <div className="flex justify-center items-center min-h-[60vh]">
+        <CircularProgress size="lg" />
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Box sx={{ p: 3 }}>
-        <Typography color="error">Error: {error}</Typography>
-      </Box>
+      <div className="p-3 text-red-600">
+        Error: {error}
+      </div>
     );
   }
 
@@ -112,30 +85,34 @@ function Dashboard() {
     membresiasPorVencer: 0,
   };
 
-const statCards = [
+  const statCards = [
     {
       title: 'Total Alumnos',
       value: stats.totalAlumnos,
       color: '#1976d2',
       subtitle: 'Activos',
+      icon: Users,
     },
     {
       title: 'Membresías Activas',
       value: stats.membresiasActivas,
       color: '#2e7d32',
-      subtitle: stats.membresiasPorVencer > 0 ? `${stats.membresiasPorVencer} por vencer` : 'Vigente'
+      subtitle: stats.membresiasPorVencer > 0 ? `${stats.membresiasPorVencer} por vencer` : 'Vigente',
+      icon: CreditCard,
     },
     {
       title: 'Ingresos del Mes',
       value: formatCurrency(stats.ingresosMes),
       color: '#388e3c',
       subtitle: stats.pagosPendientes > 0 ? `${stats.pagosPendientes} pendientes` : 'Completado',
+      icon: DollarSign,
     },
     {
       title: 'Clases Hoy',
       value: stats.clasesHoy,
       color: '#7b1fa2',
       subtitle: 'Programadas',
+      icon: BookOpen,
     },
   ];
 
@@ -158,399 +135,280 @@ const statCards = [
   ];
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" component="h2" gutterBottom sx={{ mb: 3, fontWeight: 600 }}>
-        Estadisticas
-      </Typography>
+    <div className="p-3">
+      <h2 className="text-2xl font-semibold text-text-primary mb-6">
+        Estadísticas
+      </h2>
 
-      <Grid container spacing={2} sx={{ mb: 4 }}>
-        {statCards.map((stat, index) => (
-          <Grid item xs={12} sm={6} md={3} key={index}>
-            <Card
-              sx={{
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                border: `2px solid ${stat.color}`,
-                borderRadius: 2,
-                bgcolor: stat.color + '08',
-                transition: 'transform 0.2s, box-shadow 0.2s',
-                '&:hover': {
-                  transform: 'translateY(-4px)',
-                  boxShadow: 4,
-                },
-              }}
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        {statCards.map((stat, index) => {
+          const Icon = stat.icon;
+          return (
+            <div
+              key={index}
+              className="bg-white/90 backdrop-blur-sm rounded-xl shadow-md p-4 border-2 transition-transform hover:-translate-y-1 hover:shadow-lg"
+              style={{ borderColor: stat.color }}
             >
-              <CardContent>
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    mb: 1,
-                  }}
-                >
-                  {stat.title === 'Membresías Activas' && stats.membresiasPorVencer > 0 && (
-                    <Chip
-                      size="small"
-                      label={`${stats.membresiasPorVencer} por vencer`}
-                      color="warning"
-                      variant="outlined"
-                      sx={{ fontWeight: 500 }}
-                    />
-                  )}
-                </Box>
-                <Typography variant="h4" component="div" fontWeight="bold">
-                  {stat.value}
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                  {stat.title}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {stat.subtitle}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
+              <div className="flex justify-between items-start mb-2">
+                {stat.title === 'Membresías Activas' && stats.membresiasPorVencer > 0 && (
+                  <span className="px-2 py-1 text-xs font-medium text-amber-700 bg-amber-100 rounded-md border border-amber-200">
+                    {stats.membresiasPorVencer} por vencer
+                  </span>
+                )}
+                <Icon className="w-5 h-5" style={{ color: stat.color }} />
+              </div>
+              <div className="text-3xl font-bold text-text-primary">
+                {stat.value}
+              </div>
+              <div className="text-sm text-text-secondary mt-1">
+                {stat.title}
+              </div>
+              <div className="text-xs text-text-secondary">
+                {stat.subtitle}
+              </div>
+            </div>
+          );
+        })}
+      </div>
 
-      <Grid container spacing={2} sx={{ mb: 4 }}>
+      {/* Financial Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         {financieraCards.map((card, index) => (
-          <Grid item xs={12} sm={4} key={index}>
-            <Card sx={{ 
-                height: '100%', 
-                border: `2px solid ${card.color}`,
-                borderRadius: 2,
-                bgcolor: card.color + '08',
-              }}>
-              <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <Box>
-                    <Typography variant="body2" color="text.secondary">
-                      {card.title}
-                    </Typography>
-                    <Typography variant="h5" fontWeight="bold" sx={{ color: card.color }}>
-                      {card.value}
-                    </Typography>
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
+          <div
+            key={index}
+            className="bg-white/90 backdrop-blur-sm rounded-xl shadow-md p-4 border-2"
+            style={{ borderColor: card.color }}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm text-text-secondary">
+                  {card.title}
+                </div>
+                <div className="text-xl font-bold" style={{ color: card.color }}>
+                  {card.value}
+                </div>
+              </div>
+            </div>
+          </div>
         ))}
-      </Grid>
+      </div>
 
-      <Grid container spacing={2} sx={{ mb: 4 }}>
-        <Grid item xs={12} md={6}>
-          <Card sx={{ 
-            height: '100%', 
-            border: '2px solid #1976d2',
-            borderRadius: 2,
-            bgcolor: '#1976d208',
-          }}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, color: '#1976d2' }}>
-                Alumnos por Disciplina
-              </Typography>
-              {data?.disciplinas?.length > 0 ? (
-                <Box sx={{ mt: 2 }}>
-                  {data.disciplinas.map((disc, index) => {
-                    const total = stats.totalAlumnos || 1;
-                    const porcentaje = Math.round((disc.totalAlumnos / total) * 100);
-                    return (
-                      <Box key={index} sx={{ mb: 2 }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                          <Typography variant="body2">{disc.nombre}</Typography>
-                          <Typography variant="body2" fontWeight="bold">
-                            {disc.totalAlumnos}
-                          </Typography>
-                        </Box>
-                        <LinearProgress
-                          variant="determinate"
-                          value={porcentaje}
-                          sx={{
-                            height: 8,
-                            borderRadius: 4,
-                            bgcolor: '#f0f0f0',
-                            '& .MuiLinearProgress-bar': {
-                              bgcolor: ['#1976d2', '#2e7d32', '#d32f2f', '#7b1fa2'][index % 4],
-                            },
-                          }}
-                        />
-                      </Box>
-                    );
-                  })}
-                </Box>
-              ) : (
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-                  No hay datos de disciplinas
-                </Typography>
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
+      {/* Charts Row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        {/* Alumnos por Disciplina */}
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-md p-4 border-2" style={{ borderColor: '#1976d2' }}>
+          <h3 className="text-lg font-semibold mb-4" style={{ color: '#1976d2' }}>
+            Alumnos por Disciplina
+          </h3>
+          {data?.disciplinas?.length > 0 ? (
+            <div className="space-y-3">
+              {data.disciplinas.map((disc, index) => {
+                const total = stats.totalAlumnos || 1;
+                const porcentaje = Math.round((disc.totalAlumnos / total) * 100);
+                return (
+                  <div key={index}>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm text-text-primary">{disc.nombre}</span>
+                      <span className="text-sm font-semibold text-text-primary">{disc.totalAlumnos}</span>
+                    </div>
+                    <LinearProgress
+                      value={porcentaje}
+                      color={index % 4 === 0 ? 'primary' : index % 4 === 1 ? 'success' : index % 4 === 2 ? 'error' : 'purple'}
+                      className="h-2"
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-text-secondary text-sm mt-2">No hay datos de disciplinas</p>
+          )}
+        </div>
 
-        <Grid item xs={12} md={6}>
-          <Card sx={{ 
-            height: '100%', 
-            border: '2px solid #2e7d32',
-            borderRadius: 2,
-            bgcolor: '#2e7d3208',
-          }}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, color: '#2e7d32' }}>
-                Miembros por Categoría
-              </Typography>
-              {data?.categorias?.length > 0 ? (
-                <Box sx={{ mt: 2 }}>
-                  {data.categorias.map((cat, index) => {
-                    const total = stats.totalAlumnos || 1;
-                    const porcentaje = Math.round((cat.totalAlumnos / total) * 100);
-                    return (
-                      <Box key={index} sx={{ mb: 2 }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                          <Typography variant="body2">
-                            {cat.nombre} {cat.descripcion && `(${cat.descripcion})`}
-                          </Typography>
-                          <Typography variant="body2" fontWeight="bold">
-                            {cat.totalAlumnos}
-                          </Typography>
-                        </Box>
-                        <LinearProgress
-                          variant="determinate"
-                          value={porcentaje}
-                          sx={{
-                            height: 8,
-                            borderRadius: 4,
-                            bgcolor: '#f0f0f0',
-                            '& .MuiLinearProgress-bar': {
-                              bgcolor: ['#1976d2', '#2e7d32', '#d32f2f', '#7b1fa2'][index % 4],
-                            },
-                          }}
-                        />
-                      </Box>
-                    );
-                  })}
-                </Box>
-              ) : (
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-                  No hay datos de categorías
-                </Typography>
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
+        {/* Miembros por Categoría */}
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-md p-4 border-2" style={{ borderColor: '#2e7d32' }}>
+          <h3 className="text-lg font-semibold mb-4" style={{ color: '#2e7d32' }}>
+            Miembros por Categoría
+          </h3>
+          {data?.categorias?.length > 0 ? (
+            <div className="space-y-3">
+              {data.categorias.map((cat, index) => {
+                const total = stats.totalAlumnos || 1;
+                const porcentaje = Math.round((cat.totalAlumnos / total) * 100);
+                return (
+                  <div key={index}>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm text-text-primary">
+                        {cat.nombre} {cat.descripcion && `(${cat.descripcion})`}
+                      </span>
+                      <span className="text-sm font-semibold text-text-primary">{cat.totalAlumnos}</span>
+                    </div>
+                    <LinearProgress
+                      value={porcentaje}
+                      color={colors[index % colors.length]}
+                      className="h-2"
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-text-secondary text-sm mt-2">No hay datos de categorías</p>
+          )}
+        </div>
+      </div>
 
-      <Grid container spacing={2}>
-        <Grid item xs={12} md={6}>
-          <Card sx={{ 
-            border: '2px solid #7b1fa2',
-            borderRadius: 2,
-            bgcolor: '#7b1fa208',
-          }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                <Typography variant="h6" sx={{ fontWeight: 600, color: '#7b1fa2' }}>
-                  Últimas Membresías
-                </Typography>
-              </Box>
-              <Divider sx={{ mb: 2 }} />
-              {data?.ultimasMembresias?.length > 0 ? (
-                <List disablePadding>
-                  {data.ultimasMembresias.slice(0, 5).map((m, index) => (
-                    <ListItem key={index} disablePadding sx={{ py: 1 }}>
-                      <ListItemAvatar>
-                        <Avatar sx={{ bgcolor: '#1976d2', fontWeight: 600 }}>
-                          {m.alumno?.nombre?.charAt(0)}{m.alumno?.apellido?.charAt(0)}
-                        </Avatar>
-                      </ListItemAvatar>
-                      <ListItemText
-                        primary={`${m.alumno?.nombre} ${m.alumno?.apellido}`}
-                        secondary={`${m.tipo_membrecia?.tipo_membrecia} - ${m.grupo?.nombre}`}
-                      />
-                      <Chip
-                        size="small"
-                        label={m.estado}
-                        color={m.estado === 'activa' ? 'success' : m.estado === 'vencida' ? 'error' : 'default'}
-                      />
-                    </ListItem>
-                  ))}
-                </List>
-              ) : (
-                <Typography variant="body2" color="text.secondary">
-                  No hay membresías registradas
-                </Typography>
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
+      {/* Lists Row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        {/* Últimas Membresías */}
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-md p-4 border-2" style={{ borderColor: '#7b1fa2' }}>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-lg font-semibold" style={{ color: '#7b1fa2' }}>
+              Últimas Membresías
+            </h3>
+          </div>
+          <div className="border-t border-gray-200 pt-2">
+            {data?.ultimasMembresias?.length > 0 ? (
+              <div className="divide-y divide-gray-100">
+                {data.ultimasMembresias.slice(0, 5).map((m, index) => (
+                  <div key={index} className="flex items-center gap-3 py-2">
+                    <div className="w-8 h-8 rounded-full bg-primary-main flex items-center justify-center text-white text-sm font-semibold">
+                      {m.alumno?.nombre?.charAt(0)}{m.alumno?.apellido?.charAt(0)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-text-primary truncate">
+                        {m.alumno?.nombre} {m.alumno?.apellido}
+                      </div>
+                      <div className="text-xs text-text-secondary truncate">
+                        {m.tipo_membrecia?.tipo_membrecia} - {m.grupo?.nombre}
+                      </div>
+                    </div>
+                    <span className={`
+                      px-2 py-1 text-xs rounded-md font-medium
+                      ${m.estado === 'activa' ? 'bg-green-100 text-green-800' : 
+                        m.estado === 'vencida' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'}
+                    `}>
+                      {m.estado}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-text-secondary text-sm">No hay membresías registradas</p>
+            )}
+          </div>
+        </div>
 
-        <Grid item xs={12} md={6}>
-          <Card sx={{ 
-            border: '2px solid #ed6c02',
-            borderRadius: 2,
-            bgcolor: '#ed6c0208',
-          }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                <Typography variant="h6" sx={{ fontWeight: 600, color: '#ed6c02' }}>
-                  Próximas Clases
-                </Typography>
-              </Box>
-              <Divider sx={{ mb: 2 }} />
-              {data?.ultimasClases?.length > 0 ? (
-                <List disablePadding>
-                  {data.ultimasClases.slice(0, 5).map((clase, index) => (
-                    <ListItem key={index} disablePadding sx={{ py: 1 }}>
-                      <ListItemAvatar>
-                        <Avatar sx={{ bgcolor: '#7b1fa2', fontWeight: 600 }}>
-                          {clase.grupo?.nombre?.charAt(0)}
-                        </Avatar>
-                      </ListItemAvatar>
-                      <ListItemText
-                        primary={clase.grupo?.nombre}
-                        secondary={`${formatDate(clase.fecha_clase)} - ${clase.hora_inicio?.slice(0, 5)} a ${clase.hora_fin?.slice(0, 5)}`}
-                      />
-                      <Chip
-                        size="small"
-                        label={clase.estado}
-                        color={
-                          clase.estado === 'realizada'
-                            ? 'success'
-                            : clase.estado === 'suspendida'
-                            ? 'error'
-                            : 'warning'
-                        }
-                      />
-                    </ListItem>
-                  ))}
-                </List>
-              ) : (
-                <Typography variant="body2" color="text.secondary">
-                  No hay clases programadas
-                </Typography>
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
+        {/* Próximas Clases */}
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-md p-4 border-2" style={{ borderColor: '#ed6c02' }}>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-lg font-semibold" style={{ color: '#ed6c02' }}>
+              Próximas Clases
+            </h3>
+          </div>
+          <div className="border-t border-gray-200 pt-2">
+            {data?.ultimasClases?.length > 0 ? (
+              <div className="divide-y divide-gray-100">
+                {data.ultimasClases.slice(0, 5).map((clase, index) => (
+                  <div key={index} className="flex items-center gap-3 py-2">
+                    <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-white text-sm font-semibold">
+                      {clase.grupo?.nombre?.charAt(0)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-text-primary truncate">
+                        {clase.grupo?.nombre}
+                      </div>
+                      <div className="text-xs text-text-secondary">
+                        {formatDate(clase.fecha_clase)} - {clase.hora_inicio?.slice(0, 5)} a {clase.hora_fin?.slice(0, 5)}
+                      </div>
+                    </div>
+                    <span className={`
+                      px-2 py-1 text-xs rounded-md font-medium
+                      ${clase.estado === 'realizada' ? 'bg-green-100 text-green-800' : 
+                        clase.estado === 'suspendida' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'}
+                    `}>
+                      {clase.estado}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-text-secondary text-sm">No hay clases programadas</p>
+            )}
+          </div>
+        </div>
+      </div>
 
-      <Grid container spacing={2} sx={{ mt: 0 }}>
-        <Grid item xs={12} md={4}>
-          <Card sx={{ 
-            border: '2px solid #0288d1',
-            borderRadius: 2,
-            bgcolor: '#0288d108',
-          }}>
-            <CardContent sx={{ textAlign: 'center' }}>
-              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, color: '#0288d1' }}>
-                Asistencia (últimos 7 días)
-              </Typography>
-              <Box sx={{ position: 'relative', display: 'inline-flex' }}>
-                <CircularProgress
-                  variant="determinate"
-                  value={data?.promedioAsistencia?.porcentaje || 0}
-                  size={120}
-                  thickness={4}
-                  sx={{ color: '#2e7d32' }}
-                />
-                <Box
-                  sx={{
-                    top: 0,
-                    left: 0,
-                    bottom: 0,
-                    right: 0,
-                    position: 'absolute',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <Typography variant="h4" component="div" fontWeight="bold">
-                    {data?.promedioAsistencia?.porcentaje || 0}%
-                  </Typography>
-                </Box>
-              </Box>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-                {data?.promedioAsistencia?.presentes || 0} presentes de {data?.promedioAsistencia?.total || 0}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
+      {/* Summary Row */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Asistencia */}
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-md p-4 border-2 text-center" style={{ borderColor: '#0288d1' }}>
+          <h3 className="text-lg font-semibold mb-3" style={{ color: '#0288d1' }}>
+            Asistencia (últimos 7 días)
+          </h3>
+          <div className="inline-flex items-center justify-center">
+            <CircularProgress
+              value={data?.promedioAsistencia?.porcentaje || 0}
+              size={120}
+              thickness={4}
+              color="success"
+            />
+          </div>
+          <p className="text-sm text-text-secondary mt-2">
+            {data?.promedioAsistencia?.presentes || 0} presentes de {data?.promedioAsistencia?.total || 0}
+          </p>
+        </div>
 
-        <Grid item xs={12} md={4}>
-          <Card sx={{ 
-            border: '2px solid #9c27b0',
-            borderRadius: 2,
-            bgcolor: '#9c27b008',
-          }}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, color: '#9c27b0' }}>
-                Resumen General
-              </Typography>
-              <TableContainer>
-                <Table size="small">
-                  <TableBody>
-                    <TableRow>
-                      <TableCell>Grupos Activos</TableCell>
-                      <TableCell align="right">{stats.gruposActivos}</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>Tutores Registrados</TableCell>
-                      <TableCell align="right">{stats.tutoresRegistrados}</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>Empleados Activos</TableCell>
-                      <TableCell align="right">{stats.empleadosActivos}</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>Membresías Vencidas</TableCell>
-                      <TableCell align="right">{stats.membresiasVencidas}</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>Pagos Parciales</TableCell>
-                      <TableCell align="right">{stats.pagosParciales}</TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </CardContent>
-          </Card>
-        </Grid>
+        {/* Resumen General */}
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-md p-4 border-2" style={{ borderColor: '#9c27b0' }}>
+          <h3 className="text-lg font-semibold mb-3" style={{ color: '#9c27b0' }}>
+            Resumen General
+          </h3>
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-text-secondary">Grupos Activos</span>
+              <span className="font-medium text-text-primary">{stats.gruposActivos}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-text-secondary">Tutores Registrados</span>
+              <span className="font-medium text-text-primary">{stats.tutoresRegistrados}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-text-secondary">Empleados Activos</span>
+              <span className="font-medium text-text-primary">{stats.empleadosActivos}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-text-secondary">Membresías Vencidas</span>
+              <span className="font-medium text-text-primary">{stats.membresiasVencidas}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-text-secondary">Pagos Parciales</span>
+              <span className="font-medium text-text-primary">{stats.pagosParciales}</span>
+            </div>
+          </div>
+        </div>
 
-        <Grid item xs={12} md={4}>
-          <Card sx={{ 
-            border: '2px solid #d32f2f',
-            borderRadius: 2,
-            bgcolor: '#d32f2f08',
-          }}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, color: '#d32f2f' }}>
-                Membresías por Tipo
-              </Typography>
-              {data?.membresiaPorTipo?.length > 0 ? (
-                <List disablePadding>
-                  {data.membresiaPorTipo.map((item, index) => (
-                    <ListItem key={index} disablePadding sx={{ py: 0.5 }}>
-                      <ListItemText
-                        primary={item.tipo_membrecia}
-                        secondary={`${item.total} membresías`}
-                      />
-                    </ListItem>
-                  ))}
-                </List>
-              ) : (
-                <Typography variant="body2" color="text.secondary">
-                  No hay datos
-                </Typography>
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-    </Box>
+        {/* Membresías por Tipo */}
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-md p-4 border-2" style={{ borderColor: '#d32f2f' }}>
+          <h3 className="text-lg font-semibold mb-3" style={{ color: '#d32f2f' }}>
+            Membresías por Tipo
+          </h3>
+          {data?.membresiaPorTipo?.length > 0 ? (
+            <div className="space-y-2">
+              {data.membresiaPorTipo.map((item, index) => (
+                <div key={index} className="flex justify-between text-sm">
+                  <span className="text-text-secondary">{item.tipo_membrecia}</span>
+                  <span className="font-medium text-text-primary">{item.total} membresías</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-text-secondary text-sm">No hay datos</p>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 

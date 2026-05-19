@@ -53,17 +53,19 @@ export const ESTADOS_CLASE = {
 
 // Días de la semana (0 = Domingo, 1 = Lunes, ..., 6 = Sábado)
 export const DIAS_SEMANA = [
-  'Domingo',
-  'Lunes',
-  'Martes',
-  'Miércoles',
-  'Jueves',
-  'Viernes',
-  'Sábado',
+  { valor: 0, nombre: 'Domingo' },
+  { valor: 1, nombre: 'Lunes' },
+  { valor: 2, nombre: 'Martes' },
+  { valor: 3, nombre: 'Miércoles' },
+  { valor: 4, nombre: 'Jueves' },
+  { valor: 5, nombre: 'Viernes' },
+  { valor: 6, nombre: 'Sábado' },
 ];
 
 // Helper para obtener nombre del día
 export const obtenerNombreDia = (diaSemana) => {
-  return DIAS_SEMANA[diaSemana] || 'Desconocido';
+  if (diaSemana === undefined || diaSemana === null) return 'Desconocido';
+  const dia = DIAS_SEMANA.find(d => d.valor === diaSemana);
+  return dia?.nombre || 'Desconocido';
 };
 

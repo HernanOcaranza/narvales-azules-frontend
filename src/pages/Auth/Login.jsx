@@ -1,25 +1,13 @@
 import React from 'react';
-import {
-  Box,
-  Button,
-  TextField,
-  Paper,
-  Typography,
-  Stack,
-  CircularProgress,
-  Alert,
-  Container,
-  useTheme,
-} from '@mui/material';
-import { Lock as LockIcon } from '@mui/icons-material';
+import { Lock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { ROUTES } from '../../utils/constants';
+import { Button, Input, Spinner } from '../../components/ui';
 
 function Login() {
   const navigate = useNavigate();
-  const theme = useTheme();
-  const { login, user, isAuthenticated } = useAuth();
+  const { login, isAuthenticated } = useAuth();
 
   const [formData, setFormData] = React.useState({
     usuario: '',
@@ -69,83 +57,70 @@ function Login() {
   };
 
   return (
-    <Container maxWidth="sm">
-      <Box
-        sx={{
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Paper
-          sx={{
-            p: { xs: 3, sm: 4 },
-            width: '100%',
-            maxWidth: 400,
-          }}
-        >
-          <Stack spacing={3} alignItems="center">
-            <LockIcon
-              sx={{
-                fontSize: 48,
-                color: theme.palette.primary.main,
-              }}
-            />
-            <Typography variant="h4" component="h1" align="center">
-              Iniciar Sesión
-            </Typography>
+    <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="w-full max-w-md bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg p-6 sm:p-8">
+        <div className="flex flex-col items-center gap-6">
+          <div className="p-3 bg-primary-main/10 rounded-full">
+            <Lock className="w-12 h-12 text-primary-main" />
+          </div>
+          
+          <h1 className="text-2xl font-bold text-text-primary">
+            Iniciar Sesión
+          </h1>
 
-            <form onSubmit={handleSubmit} style={{ width: '100%' }}>
-              <Stack spacing={3}>
-                {error && (
-                  <Alert severity="error" onClose={() => setError('')}>
-                    {error}
-                  </Alert>
-                )}
+          <form onSubmit={handleSubmit} className="w-full">
+            <div className="flex flex-col gap-4">
+              {error && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm flex items-center justify-between">
+                  <span>{error}</span>
+                  <button 
+                    type="button" 
+                    onClick={() => setError('')}
+                    className="text-red-500 hover:text-red-700"
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
 
-                <TextField
-                  label="Usuario"
-                  name="usuario"
-                  value={formData.usuario}
-                  onChange={handleChange}
-                  required
-                  fullWidth
-                  autoComplete="username"
-                  autoFocus
-                  disabled={loading}
-                />
+              <Input
+                label="Usuario"
+                name="usuario"
+                value={formData.usuario}
+                onChange={handleChange}
+                required
+                autoComplete="username"
+                autoFocus
+                disabled={loading}
+              />
 
-                <TextField
-                  label="Contraseña"
-                  name="contrasenia"
-                  type="password"
-                  value={formData.contrasenia}
-                  onChange={handleChange}
-                  required
-                  fullWidth
-                  autoComplete="current-password"
-                  disabled={loading}
-                />
+              <Input
+                label="Contraseña"
+                name="contrasenia"
+                type="password"
+                value={formData.contrasenia}
+                onChange={handleChange}
+                required
+                autoComplete="current-password"
+                disabled={loading}
+              />
 
-                <Button
-                  type="submit"
-                  variant="contained"
-                  fullWidth
-                  size="large"
-                  disabled={loading}
-                  startIcon={loading ? <CircularProgress size={20} /> : null}
-                >
-                  {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
-                </Button>
-              </Stack>
-            </form>
-          </Stack>
-        </Paper>
-      </Box>
-    </Container>
+              <Button
+                type="submit"
+                variant="primary"
+                fullWidth
+                size="lg"
+                disabled={loading}
+                loading={loading}
+              >
+                {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+              </Button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
   );
 }
 
 export default Login;
-
