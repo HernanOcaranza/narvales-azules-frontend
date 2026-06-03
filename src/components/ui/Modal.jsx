@@ -1,5 +1,5 @@
 import { X } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 export function Modal({
   open,
@@ -17,6 +17,7 @@ export function Modal({
     lg: 'max-w-4xl',
     xl: 'max-w-6xl',
   };
+  const overlayClickRef = useRef(false);
 
   useEffect(() => {
     if (open) {
@@ -34,7 +35,8 @@ export function Modal({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-      onClick={onClose}
+      onMouseDown={(e) => { overlayClickRef.current = (e.target === e.currentTarget); }}
+      onMouseUp={(e) => { if (e.target === e.currentTarget && overlayClickRef.current) onClose(); }}
     >
       <div
         className={`
@@ -43,7 +45,6 @@ export function Modal({
           ${fullScreen ? 'flex flex-col' : 'max-h-[90vh] flex flex-col'}
           ${className}
         `}
-        onClick={(e) => e.stopPropagation()}
       >
         {title && (
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">

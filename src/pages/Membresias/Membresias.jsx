@@ -104,7 +104,13 @@ function Membresias() {
   };
 
   const handleViewDetails = async (membresia) => {
-    setDetailDialog({ open: true, membresia, warning: null });
+    try {
+      const membresiaCompleta = await membresiasService.getCompletoById(membresia.id_membrecia);
+      setDetailDialog({ open: true, membresia: membresiaCompleta || membresia, warning: null });
+    } catch (error) {
+      console.error('Error al cargar detalles completos:', error);
+      setDetailDialog({ open: true, membresia, warning: 'No se pudo cargar la información completa' });
+    }
   };
 
   const handleCloseDetailDialog = () => {

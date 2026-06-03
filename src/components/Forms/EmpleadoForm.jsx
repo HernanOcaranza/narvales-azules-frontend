@@ -65,6 +65,7 @@ function EmpleadoForm({ onSuccess, onCancel, initialData = null }) {
         <option value="admin">Administrador</option>
         <option value="recepcionista">Recepcionista</option>
         <option value="profesor">Profesor</option>
+        <option value="guardavidas">Guardavidas</option>
       </Select>
       <Input label="Fecha de Alta" type="date" name="fecha_alta" value={formData.fecha_alta} onChange={handleChange} />
       <div className="flex justify-end gap-3 pt-4">

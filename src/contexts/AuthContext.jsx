@@ -26,6 +26,12 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const loginDirect = (token, usuario) => {
+    authService.setAuth(token, usuario);
+    setUser(usuario);
+    setIsAuthenticated(true);
+  };
+
   const logout = () => {
     authService.logout();
     setUser(null);
@@ -42,6 +48,7 @@ export function AuthProvider({ children }) {
     isAuthenticated,
     loading,
     login,
+    loginDirect,
     logout,
     hasRole,
     isAdmin: () => user?.tipo === ROLES.ADMIN,

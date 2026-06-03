@@ -1,6 +1,6 @@
 import React from 'react';
 import { Lock } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { ROUTES } from '../../utils/constants';
 import { Button, Input, Spinner } from '../../components/ui';
@@ -115,6 +115,15 @@ function Login() {
               >
                 {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
               </Button>
+
+              <div className="text-center">
+                <Link
+                  to={ROUTES.OLVIDE_CLAVE}
+                  className="text-sm text-primary-main hover:text-primary-dark"
+                >
+                  ¿Olvidaste tu contraseña?
+                </Link>
+              </div>
             </div>
           </form>
         </div>

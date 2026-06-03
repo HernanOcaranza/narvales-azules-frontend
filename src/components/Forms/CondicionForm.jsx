@@ -15,7 +15,8 @@ function CondicionForm({ onSuccess, onCancel, initialData = null }) {
     if (!formData.condicion.trim()) { setError('La condición es requerida'); return; }
     setLoading(true);
     try {
-      initialData?.id_condicion ? await condicionService.update(initialData.id_condicion, formData) : await condicionService.create(formData);
+      const payload = { ...formData, atencion: parseInt(formData.atencion) };
+      initialData?.id_condicion ? await condicionService.update(initialData.id_condicion, payload) : await condicionService.create(payload);
       onSuccess();
     } catch (err) { setError(err.message || 'Error al guardar'); } 
     finally { setLoading(false); }

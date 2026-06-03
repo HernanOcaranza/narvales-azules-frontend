@@ -27,28 +27,30 @@ export function CircularProgress({ value = 0, size = 40, thickness = 4, color = 
     white: '#FFFFFF',
   };
 
-  const radius = (size - thickness) / 2;
+  const numericSize = parseInt(size, 10) || 40;
+  const numericThickness = parseInt(thickness, 10) || 4;
+  const radius = (numericSize - numericThickness) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (value / 100) * circumference;
 
   return (
-    <div className={`relative inline-flex items-center justify-center ${className}`} style={{ width: size, height: size }}>
-      <svg className="transform -rotate-90" width={size} height={size}>
+    <div className={`relative inline-flex items-center justify-center ${className}`} style={{ width: numericSize, height: numericSize }}>
+      <svg className="transform -rotate-90" width={numericSize} height={numericSize}>
         <circle
-          cx={size / 2}
-          cy={size / 2}
+          cx={numericSize / 2}
+          cy={numericSize / 2}
           r={radius}
           fill="none"
           stroke="#E5E7EB"
-          strokeWidth={thickness}
+          strokeWidth={numericThickness}
         />
         <circle
-          cx={size / 2}
-          cy={size / 2}
+          cx={numericSize / 2}
+          cy={numericSize / 2}
           r={radius}
           fill="none"
           stroke={colors[color]}
-          strokeWidth={thickness}
+          strokeWidth={numericThickness}
           strokeLinecap="round"
           strokeDasharray={circumference}
           strokeDashoffset={offset}

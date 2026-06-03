@@ -4,6 +4,8 @@ import * as claseService from '../../services/claseService';
 import { formatDate } from '../../utils/helpers';
 import Pagination from '../../components/Pagination/Pagination';
 import ClasesFilters from '../../components/clases/ClasesFilters';
+import AsistenciaEmpleados from '../../components/clases/AsistenciaEmpleados';
+import AsistenciaAlumnos from '../../components/clases/AsistenciaAlumnos';
 import { useAuth } from '../../hooks/useAuth';
 import { Button, Input, Select, Card, Chip, Spinner, Modal, Table, TableHead, TableBody, TableRow, TableHeadCell, TableCell } from '../../components/ui';
 
@@ -146,6 +148,15 @@ function Clases() {
     return estados[estado] || { variant: 'default', label: estado };
   };
 
+  const getAsistenciaBadge = (clase) => {
+    const totalEmpleados = parseInt(clase.total_empleados_asistencia) || 0;
+    const totalAlumnos = parseInt(clase.total_alumnos_asistencia) || 0;
+    if (totalEmpleados > 0 || totalAlumnos > 0) {
+      return { variant: 'success', label: 'Registrada' };
+    }
+    return { variant: 'default', label: 'Pendiente' };
+  };
+
   return (
     <div>
       {/* Filters */}
@@ -180,6 +191,7 @@ function Clases() {
           ) : (
             clases.map((clase) => {
               const badge = getEstadoBadge(clase.estado);
+              const asistenciaBadge = getAsistenciaBadge(clase);
               return (
                 <Card key={clase.id_clase} hover onClick={() => handleOpenDetailDialog(clase)}>
                   <div className="space-y-2">
@@ -192,6 +204,9 @@ function Clases() {
                     </p>
                     <p className="text-sm text-text-secondary">
                       Disciplina: {clase.grupo?.disciplina?.disciplina || 'N/A'}
+                    </p>
+                    <p className="text-sm text-text-secondary">
+                      Asistencia empleados: <Chip label={asistenciaBadge.label} variant={asistenciaBadge.variant} size="sm" />
                     </p>
                     {canEdit && (
                       <div className="flex gap-2 mt-2" onClick={(e) => e.stopPropagation()}>
@@ -214,19 +229,21 @@ function Clases() {
               <TableHeadCell>Grupo</TableHeadCell>
               <TableHeadCell>Disciplina</TableHeadCell>
               <TableHeadCell>Estado</TableHeadCell>
+              <TableHeadCell>Asistencia</TableHeadCell>
               {canEdit && <TableHeadCell className="text-right">Acciones</TableHeadCell>}
             </TableRow>
           </TableHead>
           <TableBody>
             {clases.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={canEdit ? 7 : 6} className="text-center">
+                <TableCell colSpan={canEdit ? 8 : 7} className="text-center">
                   No hay clases registradas
                 </TableCell>
               </TableRow>
             ) : (
               clases.map((clase) => {
                 const badge = getEstadoBadge(clase.estado);
+                const asistenciaBadge = getAsistenciaBadge(clase);
                 return (
                   <TableRow key={clase.id_clase} hover onClick={() => handleOpenDetailDialog(clase)}>
                     <TableCell>{formatDate(clase.fecha_clase)}</TableCell>
@@ -236,6 +253,9 @@ function Clases() {
                     <TableCell>{clase.grupo?.disciplina?.disciplina || 'N/A'}</TableCell>
                     <TableCell>
                       <Chip label={badge.label} variant={badge.variant} size="sm" />
+                    </TableCell>
+                    <TableCell>
+                      <Chip label={asistenciaBadge.label} variant={asistenciaBadge.variant} size="sm" />
                     </TableCell>
                     {canEdit && (
                       <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
@@ -322,7 +342,7 @@ function Clases() {
         open={detailDialog.open}
         onClose={handleCloseDetailDialog}
         title="Detalles de la Clase"
-        size="md"
+        size="lg"
       >
         {detailDialog.clase && (
           <div className="space-y-4">
@@ -352,6 +372,11 @@ function Clases() {
                 <p className="font-medium">{detailDialog.clase.grupo?.disciplina?.disciplina || 'N/A'}</p>
               </div>
             </div>
+
+            <hr className="border-gray-200" />
+            <AsistenciaEmpleados idClase={detailDialog.clase.id_clase} onAsistenciaGuardada={() => loadClasesWithParams()} />
+            <hr className="border-gray-200" />
+            <AsistenciaAlumnos idClase={detailDialog.clase.id_clase} onAsistenciaGuardada={() => loadClasesWithParams()} />
           </div>
         )}
       </Modal>

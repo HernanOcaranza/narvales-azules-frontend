@@ -40,6 +40,7 @@ function AlumnoForm({ onSuccess, onCancel, initialData = null }) {
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState('');
   const [showNewTutor, setShowNewTutor] = React.useState(false);
+  const overlayClickRef = React.useRef(false);
 
   React.useEffect(() => {
     loadOptions();
@@ -104,6 +105,7 @@ function AlumnoForm({ onSuccess, onCancel, initialData = null }) {
   };
 
   return (
+    <>
     <form onSubmit={handleSubmit} className="space-y-4">
       {error && (
         <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
@@ -131,7 +133,6 @@ function AlumnoForm({ onSuccess, onCancel, initialData = null }) {
           name="dni"
           value={formData.dni}
           onChange={handleChange}
-          required
         />
         <Input
           label="Fecha de Nacimiento"
@@ -218,25 +219,30 @@ function AlumnoForm({ onSuccess, onCancel, initialData = null }) {
           {initialData ? 'Actualizar' : 'Crear'}
         </Button>
       </div>
-
-      {showNewTutor && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-          <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Nuevo Tutor</h3>
-              <button onClick={() => setShowNewTutor(false)} className="p-1 hover:bg-gray-100 rounded">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <TutorForm
-              onSuccess={handleTutorCreated}
-              onCancel={() => setShowNewTutor(false)}
-            />
-          </div>
-        </div>
-      )}
     </form>
-  );
+
+    {showNewTutor && (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+        onMouseDown={(e) => { overlayClickRef.current = (e.target === e.currentTarget); }}
+        onMouseUp={(e) => { if (e.target === e.currentTarget && overlayClickRef.current) setShowNewTutor(false); }}
+      >
+        <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-semibold">Nuevo Tutor</h3>
+            <button onClick={() => setShowNewTutor(false)} className="p-1 hover:bg-gray-100 rounded">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          <TutorForm
+            onSuccess={handleTutorCreated}
+            onCancel={() => setShowNewTutor(false)}
+          />
+        </div>
+      </div>
+    )}
+  </>
+);
 }
 
 export default AlumnoForm;

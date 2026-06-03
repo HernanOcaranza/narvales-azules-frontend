@@ -18,6 +18,13 @@ export const ROUTES = {
   CONFIGURACION_CONDICIONES: '/configuracion/condiciones',
   CONFIGURACION_TIPO_MEMBRESIAS: '/configuracion/tipo-membresias',
   CONFIGURACION_PRECIO_MEMBRESIAS: '/configuracion/precio-membresias',
+  OLVIDE_CLAVE: '/olvide-mi-clave',
+  CAMBIAR_CLAVE: '/cambiar-clave',
+  CAMBIAR_CONTRASENIA: '/cambiar-contrasenia',
+  REPORTES: '/reportes',
+  REPORTES_ASISTENCIA_ALUMNOS: '/reportes/asistencia-alumnos',
+  REPORTES_ASISTENCIA_EMPLEADOS: '/reportes/asistencia-empleados',
+  REPORTES_MEMBRESIAS: '/reportes/membresias',
 };
 
 // Estados comunes

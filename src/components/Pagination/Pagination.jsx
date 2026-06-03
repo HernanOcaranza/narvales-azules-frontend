@@ -1,6 +1,18 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+
+function useMediaQuery(query) {
+  const [matches, setMatches] = useState(() => window.matchMedia(query).matches);
+  useEffect(() => {
+    const mql = window.matchMedia(query);
+    const handler = (e) => setMatches(e.matches);
+    mql.addEventListener('change', handler);
+    return () => mql.removeEventListener('change', handler);
+  }, [query]);
+  return matches;
+}
 
 const Pagination = ({ pagination, onPageChange, onLimitChange }) => {
+  const isMobile = useMediaQuery('(max-width: 639px)');
   if (!pagination || pagination.totalPages <= 1) return null;
 
   const handlePageChange = (event, newPage) => {
@@ -14,7 +26,7 @@ const Pagination = ({ pagination, onPageChange, onLimitChange }) => {
   const renderPageButtons = () => {
     const buttons = [];
     const { page, totalPages } = pagination;
-    const maxButtons = 5;
+    const maxButtons = isMobile ? 3 : 5;
     let start = Math.max(1, page - Math.floor(maxButtons / 2));
     let end = Math.min(totalPages, start + maxButtons - 1);
     if (end - start + 1 < maxButtons) start = Math.max(1, end - maxButtons + 1);

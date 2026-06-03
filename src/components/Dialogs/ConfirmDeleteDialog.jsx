@@ -1,13 +1,15 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '../../components/ui';
 
 function ConfirmDeleteDialog({ open, onClose, onConfirm, title, itemName }) {
+  const overlayClickRef = useRef(false);
+
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onMouseDown={(e) => { overlayClickRef.current = (e.target === e.currentTarget); }} onMouseUp={(e) => { if (e.target === e.currentTarget && overlayClickRef.current) onClose(); }}>
+      <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
         <h2 className="text-xl font-semibold text-text-primary mb-2">Confirmar eliminación</h2>
         <p className="text-text-secondary mb-4">
           ¿Estás seguro de eliminar {title} <strong>{itemName}</strong>? Esta acción no se puede deshacer.
