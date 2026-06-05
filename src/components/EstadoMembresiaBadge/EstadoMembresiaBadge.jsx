@@ -1,60 +1,44 @@
 import React from 'react';
-import { Chip, Box } from '@mui/material';
-import {
-  CheckCircle as CheckCircleIcon,
-  Error as ErrorIcon,
-  Warning as WarningIcon,
-  Schedule as ScheduleIcon,
-  PauseCircle as PauseCircleIcon,
-  Cancel as CancelIcon,
-  Help as HelpIcon,
-} from '@mui/icons-material';
-import { getEstadoMembresia, getEstadoMembresiaMuiColor } from '../../utils/membresiaHelpers';
+import { AlertCircle, CheckCircle, Clock } from 'lucide-react';
+import { Chip } from '../../components/ui';
 
-/**
- * Componente que muestra un badge con el estado de membresía de un alumno
- * @param {object} props
- * @param {object} props.alumno - Objeto alumno con membresias
- * @param {boolean} props.showIcon - Si se debe mostrar el icono (default: true)
- * @param {string} props.size - Tamaño del badge ('small' | 'medium' | 'large', default: 'small')
- */
-export const EstadoMembresiaBadge = ({ alumno, showIcon = true, size = 'small' }) => {
-  if (!alumno) {
-    return null;
-  }
-  
-  const estado = getEstadoMembresia(alumno);
-  const muiColor = getEstadoMembresiaMuiColor(estado.tipo);
-
-  // Mapeo de iconos
-  const iconMap = {
-    'check_circle': CheckCircleIcon,
-    'error': ErrorIcon,
-    'warning': WarningIcon,
-    'schedule': ScheduleIcon,
-    'pause_circle': PauseCircleIcon,
-    'cancel': CancelIcon,
-    'help': HelpIcon,
+function EstadoMembresiaBadge({ alumno, size = 'md' }) {
+  const getEstado = () => {
+    if (!alumno?.membresias || alumno?.membresias?.length === 0) {
+      return { label: 'Sin membresía', variant: 'default', icon: AlertCircle };
+    }
+    
+    const membresiaActiva = alumno?.membresias?.find(m => m.estado === 'activa');
+    if (membresiaActiva) {
+      const hoy = new Date();
+      const fin = new Date(membresiaActiva.fecha_fin);
+      const diasRestantes = Math.ceil((fin - hoy) / (1000 * 60 * 60 * 24));
+      
+      if (diasRestantes <= 7) {
+        return { label: `Por vencer (${diasRestantes}d)`, variant: 'warning', icon: Clock };
+      }
+      return { label: 'Activa', variant: 'success', icon: CheckCircle };
+    }
+    
+    const membresiaVencida = alumno?.membresias?.find(m => m.estado === 'vencida');
+    if (membresiaVencida) {
+      return { label: 'Vencida', variant: 'error', icon: AlertCircle };
+    }
+    
+    return { label: 'Sin membresía', variant: 'default', icon: AlertCircle };
   };
 
-  const IconComponent = iconMap[estado.icon] || HelpIcon;
+  const estado = getEstado();
+  const Icon = estado.icon;
 
   return (
-    <Chip
-      label={estado.label}
-      color={muiColor}
+    <Chip 
+      label={estado.label} 
+      variant={estado.variant} 
       size={size}
-      icon={showIcon ? <IconComponent /> : undefined}
-      sx={{
-        fontWeight: 500,
-        ...(muiColor === 'default' && {
-          backgroundColor: `${estado.color}20`,
-          color: estado.color,
-          border: `1px solid ${estado.color}`,
-        }),
-      }}
+      icon={<Icon className={`w-3 h-3 ${estado.variant === 'success' ? 'text-green-600' : estado.variant === 'warning' ? 'text-amber-600' : 'text-red-600'}`} />}
     />
   );
-};
+}
 
 export default EstadoMembresiaBadge;

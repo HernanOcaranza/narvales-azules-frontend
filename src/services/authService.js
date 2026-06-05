@@ -65,6 +65,11 @@ export const getToken = () => {
  * Obtiene la información del usuario autenticado
  * @returns {object|null} - Información del usuario o null
  */
+export const setAuth = (token, usuario) => {
+  localStorage.setItem('token', token);
+  localStorage.setItem('usuario', JSON.stringify(usuario));
+};
+
 export const getUser = () => {
   const usuario = localStorage.getItem('usuario');
   if (!usuario) return null;

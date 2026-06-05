@@ -1,40 +1,26 @@
-import React from 'react';
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  Typography,
-} from '@mui/material';
+import React, { useRef } from 'react';
+import { X } from 'lucide-react';
+import { Button } from '../../components/ui';
 
-/**
- * Componente reutilizable para confirmar eliminación
- * @param {boolean} open - Estado de apertura del diálogo
- * @param {function} onClose - Función para cerrar el diálogo
- * @param {function} onConfirm - Función para confirmar la eliminación
- * @param {string} title - Título del elemento a eliminar (ej: "categoría", "disciplina")
- * @param {string} itemName - Nombre del elemento específico a eliminar
- */
 function ConfirmDeleteDialog({ open, onClose, onConfirm, title, itemName }) {
+  const overlayClickRef = useRef(false);
+
+  if (!open) return null;
+
   return (
-    <Dialog open={open} onClose={onClose}>
-      <DialogTitle>Confirmar Eliminación</DialogTitle>
-      <DialogContent>
-        <Typography>
-          ¿Está seguro de que desea eliminar {title} "{itemName}"?
-          Esta acción no se puede deshacer.
-        </Typography>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Cancelar</Button>
-        <Button onClick={onConfirm} color="error" variant="contained">
-          Eliminar
-        </Button>
-      </DialogActions>
-    </Dialog>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onMouseDown={(e) => { overlayClickRef.current = (e.target === e.currentTarget); }} onMouseUp={(e) => { if (e.target === e.currentTarget && overlayClickRef.current) onClose(); }}>
+      <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+        <h2 className="text-xl font-semibold text-text-primary mb-2">Confirmar eliminación</h2>
+        <p className="text-text-secondary mb-4">
+          ¿Estás seguro de eliminar {title} <strong>{itemName}</strong>? Esta acción no se puede deshacer.
+        </p>
+        <div className="flex justify-end gap-3">
+          <Button variant="ghost" onClick={onClose}>Cancelar</Button>
+          <Button variant="danger" onClick={() => { onConfirm(); onClose(); }}>Eliminar</Button>
+        </div>
+      </div>
+    </div>
   );
 }
 
 export default ConfirmDeleteDialog;
-

@@ -1,75 +1,35 @@
 import React from 'react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  IconButton,
-  Stack,
-  Typography,
-} from '@mui/material';
-import { Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import { Edit, Trash2 } from 'lucide-react';
+import { Table, TableHead, TableBody, TableRow, TableHeadCell, TableCell } from '../ui';
 
-/**
- * Componente de tabla para mostrar categorías
- * @param {Array} categorias - Lista de categorías
- * @param {function} onEdit - Función para editar una categoría
- * @param {function} onDelete - Función para eliminar una categoría
- */
-function CategoriaTable({ categorias, onEdit, onDelete }) {
+export default function CategoriaTable({ categorias = [], onEdit, onDelete }) {
   return (
-    <TableContainer component={Paper}>
-      <Table>
-        <TableHead>
-          <TableRow>
-            <TableCell>ID</TableCell>
-            <TableCell>Categoría</TableCell>
-            <TableCell align="right">Acciones</TableCell>
+    <Table>
+      <TableHead>
+        <TableRow>
+          <TableHeadCell>Nombre</TableHeadCell>
+          <TableHeadCell>Descripción</TableHeadCell>
+          <TableHeadCell className="text-right">Acciones</TableHeadCell>
+        </TableRow>
+      </TableHead>
+      <TableBody>
+        {categorias.map((item) => (
+          <TableRow key={item.id_categoria} hover>
+            <TableCell className="font-medium">{item.categoria}</TableCell>
+            <TableCell>{item.descripcion || item.descripcion_categoria || '-'}</TableCell>
+            <TableCell className="text-right">
+              <div className="flex justify-end gap-1">
+                <button onClick={() => onEdit(item)} className="p-1.5 rounded-lg hover:bg-primary-main/10 text-primary-main">
+                  <Edit className="w-4 h-4" />
+                </button>
+                <button onClick={() => onDelete(item)} className="p-1.5 rounded-lg hover:bg-red-100 text-red-600">
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            </TableCell>
           </TableRow>
-        </TableHead>
-        <TableBody>
-          {categorias.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={3} align="center">
-                <Typography variant="body1" color="text.secondary" p={2}>
-                  No hay categorías registradas
-                </Typography>
-              </TableCell>
-            </TableRow>
-          ) : (
-            categorias.map((categoria) => (
-              <TableRow key={categoria.id_categoria} hover>
-                <TableCell>{categoria.id_categoria}</TableCell>
-                <TableCell>{categoria.categoria}</TableCell>
-                <TableCell align="right">
-                  <Stack direction="row" spacing={1} justifyContent="flex-end">
-                    <IconButton
-                      size="small"
-                      color="primary"
-                      onClick={() => onEdit(categoria)}
-                    >
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton
-                      size="small"
-                      color="error"
-                      onClick={() => onDelete(categoria)}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </Stack>
-                </TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
-    </TableContainer>
+        ))}
+      </TableBody>
+    </Table>
   );
 }
-
-export default CategoriaTable;
-

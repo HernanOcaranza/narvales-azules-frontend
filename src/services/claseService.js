@@ -112,6 +112,24 @@ export const generarTodas = async () => {
   return response?.data || response;
 };
 
+export const getAsistenciaEmpleados = async (idClase) => {
+  const response = await api.get(`${ENDPOINT}/${idClase}/asistencia-empleados`);
+  return response?.data || response;
+};
+
+export const registrarAsistenciaEmpleados = async (idClase, empleados) => {
+  return await api.post(`${ENDPOINT}/${idClase}/asistencia-empleados`, empleados);
+};
+
+export const getAsistenciaAlumnos = async (idClase) => {
+  const response = await api.get(`${ENDPOINT}/${idClase}/asistencia-alumnos`);
+  return response?.data || response;
+};
+
+export const registrarAsistenciaAlumnos = async (idClase, alumnos) => {
+  return await api.post(`${ENDPOINT}/${idClase}/asistencia-alumnos`, alumnos);
+};
+
 // Exportar todas las funciones como objeto también
 const claseService = {
   getAll,
@@ -123,6 +141,10 @@ const claseService = {
   update,
   deleteById,
   generarTodas,
+  getAsistenciaEmpleados,
+  registrarAsistenciaEmpleados,
+  getAsistenciaAlumnos,
+  registrarAsistenciaAlumnos,
 };
 
 export default claseService;

@@ -1,22 +1,5 @@
 import React from 'react';
-import {
-  Box,
-  Button,
-  CircularProgress,
-  Stack,
-  Typography,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  Alert,
-  Snackbar,
-  useMediaQuery,
-  useTheme,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-} from '@mui/material';
-import { Add as AddIcon, ExpandMore as ExpandMoreIcon, FilterList as FilterListIcon } from '@mui/icons-material';
+import { Plus, ChevronDown, Filter } from 'lucide-react';
 import { usePagos } from '../../hooks/usePagos';
 import PagosTable from '../../components/pagos/PagosTable';
 import PagoForm from '../../components/pagos/PagoForm';
@@ -24,11 +7,9 @@ import PagoDetailsModal from '../../components/pagos/PagoDetailsModal';
 import PagosFilters from '../../components/pagos/PagosFilters';
 import ConfirmDeleteDialog from '../../components/Dialogs/ConfirmDeleteDialog';
 import Pagination from '../../components/Pagination/Pagination';
+import { Button, Modal } from '../../components/ui';
 
 function Pagos() {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-
   const { pagos, loading, pagination, fetchPagos, createPago, updatePago, deletePago, fetchPagoById } = usePagos();
 
   const [filters, setFilters] = React.useState({
@@ -45,6 +26,15 @@ function Pagos() {
   const [deleteDialog, setDeleteDialog] = React.useState({ open: false, pago: null });
   const [snackbar, setSnackbar] = React.useState({ open: false, message: '', severity: 'success' });
   const [paginationState, setPaginationState] = React.useState({ page: 1, limit: 10 });
+  const [isMobile, setIsMobile] = React.useState(false);
+  const [filtersExpanded, setFiltersExpanded] = React.useState(false);
+
+  React.useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 640);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   React.useEffect(() => {
     loadPagos(paginationState.page, paginationState.limit);
@@ -141,55 +131,33 @@ function Pagos() {
   };
 
   return (
-    <Box>
-      <Box
-        sx={{
-          mb: 3,
-          display: 'flex',
-          justifyContent: 'flex-end',
-        }}
-      >
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => handleOpenModal()}>
+    <div>
+      <div className="flex justify-end mb-4">
+        <Button variant="primary" icon={Plus} onClick={() => handleOpenModal()}>
           Registrar Pago
         </Button>
-      </Box>
+      </div>
 
-      <Accordion 
-        defaultExpanded={false}
-        disableGutters 
-        sx={{ 
-          backgroundColor: 'rgba(255, 255, 255, 0.95)', 
-          borderRadius: '8px !important',
-          boxShadow: 'none',
-          '&:before': { display: 'none' },
-          mb: 1,
-          '& .MuiAccordionSummary-root': {
-            minHeight: 40,
-            p: '0 8px',
-          },
-          '& .MuiAccordionSummary-content': {
-            my: 1,
-          },
-        }}
-      >
-        <AccordionSummary 
-          expandIcon={<ExpandMoreIcon />}
-          sx={{ 
-            minHeight: 40, 
-            p: '0 8px',
-          }}
+      {/* Filters Accordion */}
+      <div className="bg-white/95 rounded-lg mb-3 overflow-hidden border border-gray-200">
+        <button 
+          className="w-full px-4 py-2 flex items-center gap-2 text-text-primary font-medium hover:bg-gray-50 transition-colors"
+          onClick={() => setFiltersExpanded(!filtersExpanded)}
         >
-          <FilterListIcon sx={{ mr: 1, fontSize: 20, color: 'primary.main' }} />
-          <Typography sx={{ fontWeight: 500 }}>Filtros</Typography>
-        </AccordionSummary>
-        <AccordionDetails sx={{ p: '8px !important' }}>
-          <PagosFilters
-            filters={filters}
-            onFilterChange={handleFilterChange}
-            onClearFilters={handleClearFilters}
-          />
-        </AccordionDetails>
-      </Accordion>
+          <Filter className="w-4 h-4 text-primary-main" />
+          Filtros
+          <ChevronDown className={`ml-auto w-4 h-4 transition-transform ${filtersExpanded ? 'rotate-180' : ''}`} />
+        </button>
+        {filtersExpanded && (
+          <div className="p-3 border-t border-gray-200">
+            <PagosFilters
+              filters={filters}
+              onFilterChange={handleFilterChange}
+              onClearFilters={handleClearFilters}
+            />
+          </div>
+        )}
+      </div>
 
       <PagosTable
         pagos={pagos}
@@ -207,26 +175,18 @@ function Pagos() {
       />
 
       {/* Modal para crear/editar pago */}
-      <Dialog
+      <Modal
         open={openModal}
         onClose={handleCloseModal}
-        maxWidth="sm"
-        fullWidth
-        fullScreen={isMobile}
+        title={editingItem ? 'Editar Pago' : 'Crear Nuevo Pago'}
+        size="sm"
       >
-        <DialogTitle>
-          {editingItem ? 'Editar Pago' : 'Crear Nuevo Pago'}
-        </DialogTitle>
-        <DialogContent>
-          <Box sx={{ pt: 2 }}>
-            <PagoForm
-              onSuccess={handleSuccess}
-              onCancel={handleCloseModal}
-              initialData={editingItem}
-            />
-          </Box>
-        </DialogContent>
-      </Dialog>
+        <PagoForm
+          onSuccess={handleSuccess}
+          onCancel={handleCloseModal}
+          initialData={editingItem}
+        />
+      </Modal>
 
       {/* Modal de detalles del pago */}
       <PagoDetailsModal
@@ -246,21 +206,23 @@ function Pagos() {
       />
 
       {/* Snackbar para notificaciones */}
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={6000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-      >
-        <Alert
-          onClose={() => setSnackbar({ ...snackbar, open: false })}
-          severity={snackbar.severity}
-          sx={{ width: '100%' }}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
-    </Box>
+      {snackbar.open && (
+        <div className={`fixed bottom-4 right-4 px-4 py-3 rounded-lg shadow-lg z-50 ${
+          snackbar.severity === 'success' ? 'bg-green-600 text-white' : 
+          snackbar.severity === 'error' ? 'bg-red-600 text-white' : 'bg-amber-600 text-white'
+        }`}>
+          <div className="flex items-center gap-3">
+            <span>{snackbar.message}</span>
+            <button 
+              onClick={() => setSnackbar({ ...snackbar, open: false })}
+              className="hover:opacity-80"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 

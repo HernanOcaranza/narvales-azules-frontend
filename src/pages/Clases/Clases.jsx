@@ -1,53 +1,13 @@
 import React from 'react';
-import {
-  Box,
-  Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  IconButton,
-  CircularProgress,
-  Stack,
-  Typography,
-  Chip,
-  useMediaQuery,
-  useTheme,
-  Card,
-  CardContent,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Grid,
-  Divider,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-} from '@mui/material';
-import {
-  PlayArrow as PlayArrowIcon,
-  Edit as EditIcon,
-  Visibility as VisibilityIcon,
-  Save as SaveIcon,
-  Close as CloseIcon,
-  ExpandMore as ExpandMoreIcon,
-  FilterList as FilterListIcon,
-} from '@mui/icons-material';
+import { Play, Edit, Eye, Save, X, ChevronDown, Filter, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
 import * as claseService from '../../services/claseService';
-import { Alert, Snackbar } from '@mui/material';
 import { formatDate } from '../../utils/helpers';
 import Pagination from '../../components/Pagination/Pagination';
 import ClasesFilters from '../../components/clases/ClasesFilters';
+import AsistenciaEmpleados from '../../components/clases/AsistenciaEmpleados';
+import AsistenciaAlumnos from '../../components/clases/AsistenciaAlumnos';
 import { useAuth } from '../../hooks/useAuth';
+import { Button, Input, Select, Card, Chip, Spinner, Modal, Table, TableHead, TableBody, TableRow, TableHeadCell, TableCell } from '../../components/ui';
 
 function Clases() {
   const { userRole } = useAuth();
@@ -72,28 +32,19 @@ function Clases() {
     fechaDesde: '',
     fechaHasta: '',
   });
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const [isMobile, setIsMobile] = React.useState(false);
+  const [filtersExpanded, setFiltersExpanded] = React.useState(false);
+
+  React.useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 640);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   React.useEffect(() => {
     loadClasesWithParams(pagination.page, pagination.limit);
   }, [pagination.page, pagination.limit, filters]);
-
-  const loadClases = () => {
-    loadClasesWithParams(pagination.page, pagination.limit);
-  };
-
-  const handlePageChange = (newPage) => {
-    const newLimit = pagination.limit;
-    setPagination(prev => ({ ...prev, page: newPage }));
-    loadClasesWithParams(newPage, newLimit);
-  };
-
-  const handleLimitChange = (newLimit) => {
-    const limitNum = parseInt(newLimit, 10);
-    setPagination(prev => ({ ...prev, limit: limitNum, page: 1 }));
-    loadClasesWithParams(1, limitNum);
-  };
 
   const loadClasesWithParams = async (page, limit) => {
     setLoading(true);
@@ -105,104 +56,43 @@ function Clases() {
       if (filters.estado) filtrosBackend.estado = filters.estado;
       if (filters.fechaDesde) filtrosBackend.fechaDesde = filters.fechaDesde;
       if (filters.fechaHasta) filtrosBackend.fechaHasta = filters.fechaHasta;
-
       const result = await claseService.getAll({ page, limit, filters: filtrosBackend });
-      const response = result?.data?.data || result?.data || result;
-      const pagInfo = result?.data?.pagination || result?.pagination || { page: 1, limit: 10, total: 0, totalPages: 0 };
-      setClases(Array.isArray(response) ? response : []);
-      setPagination(prev => ({ ...prev, ...pagInfo }));
+      setClases(result?.data?.data || result?.data || []);
+      setPagination(result?.data?.pagination || result?.pagination || { page, limit, total: 0, totalPages: 0 });
     } catch (error) {
       console.error('Error al cargar clases:', error);
       setClases([]);
-      setSnackbar({
-        open: true,
-        message: 'Error al cargar las clases. Por favor, intente nuevamente.',
-        severity: 'error',
-      });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleGenerarClases = async () => {
-    setGenerating(true);
-    try {
-      const response = await claseService.generarTodas();
-      const message = response?.message || 'Clases generadas correctamente';
-      setSnackbar({
-        open: true,
-        message: message,
-        severity: 'success',
-      });
-      // Recargar las clases después de generar
-      await loadClases();
-    } catch (error) {
-      console.error('Error al generar clases:', error);
-      setSnackbar({
-        open: true,
-        message: error.message || 'Error al generar las clases. Por favor, intente nuevamente.',
-        severity: 'error',
-      });
-    } finally {
-      setGenerating(false);
-    }
+  const handlePageChange = (newPage) => {
+    setPagination(prev => ({ ...prev, page: newPage }));
   };
 
-  const handleCloseSnackbar = () => {
-    setSnackbar({ ...snackbar, open: false });
+  const handleLimitChange = (newLimit) => {
+    const limitNum = parseInt(newLimit, 10);
+    setPagination(prev => ({ ...prev, limit: limitNum, page: 1 }));
+  };
+
+  const handleFilterChange = (newFilters) => {
+    setFilters(newFilters);
+  };
+
+  const handleClearFilters = () => {
+    setFilters({ idGrupo: '', idDisciplina: '', idCategoria: '', estado: '', fechaDesde: '', fechaHasta: '' });
   };
 
   const handleOpenEditDialog = (clase) => {
-    // Formatear fecha para el input
-    const formatDateForInput = (date) => {
-      if (!date) return '';
-      const d = new Date(date);
-      if (isNaN(d.getTime())) return '';
-      // Usar métodos locales en lugar de UTC para evitar problemas de zona horaria
-      const year = d.getFullYear();
-      const month = String(d.getMonth() + 1).padStart(2, '0');
-      const day = String(d.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    };
-
-    // Formatear hora para el input (HH:MM:SS -> HH:MM)
-    const formatTimeForInput = (time) => {
-      if (!time) return '';
-      if (time.length >= 5) {
-        return time.substring(0, 5);
-      }
-      return time;
-    };
-
-    // Convertir estado numérico a string del enum
-    const getEstadoEnum = (estado) => {
-      if (typeof estado === 'string') {
-        // Si ya es string, validar que sea uno de los valores del enum
-        if (['pendiente', 'realizada', 'suspendida'].includes(estado)) {
-          return estado;
-        }
-      }
-      // Convertir número a string del enum
-      if (estado === 1 || estado === 'activo' || estado === 'realizada') {
-        return 'realizada';
-      }
-      if (estado === 0 || estado === 'inactivo' || estado === 'suspendida') {
-        return 'suspendida';
-      }
-      if (estado === 'pendiente') {
-        return 'pendiente';
-      }
-      return 'pendiente'; // Valor por defecto
-    };
-
     setEditFormData({
-      fecha_clase: formatDateForInput(clase.fecha_clase),
-      hora_inicio: formatTimeForInput(clase.hora_inicio),
-      hora_fin: formatTimeForInput(clase.hora_fin),
-      estado: getEstadoEnum(clase.estado),
+      fecha_clase: clase.fecha_clase,
+      hora_inicio: clase.hora_inicio?.slice(0, 5),
+      hora_fin: clase.hora_fin?.slice(0, 5),
+      estado: clase.estado,
     });
-    setEditDialog({ open: true, clase });
     setEditErrors({});
+    setEditDialog({ open: true, clase });
   };
 
   const handleCloseEditDialog = () => {
@@ -211,606 +101,299 @@ function Clases() {
     setEditErrors({});
   };
 
-  const handleEditFormChange = (e) => {
+  const handleEditInputChange = (e) => {
     const { name, value } = e.target;
-    setEditFormData((prev) => ({
-      ...prev,
-      [name]: value, // El estado ahora es string, no número
-    }));
-    // Limpiar error del campo
-    if (editErrors[name]) {
-      setEditErrors((prev) => ({
-        ...prev,
-        [name]: '',
-      }));
-    }
+    setEditFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const validateEditForm = () => {
-    const newErrors = {};
+  const handleEditSubmit = async () => {
+    const errors = {};
+    if (!editFormData.fecha_clase) errors.fecha_clase = 'La fecha es requerida';
+    if (!editFormData.hora_inicio) errors.hora_inicio = 'La hora de inicio es requerida';
+    if (!editFormData.hora_fin) errors.hora_fin = 'La hora de fin es requerida';
 
-    if (!editFormData.fecha_clase) {
-      newErrors.fecha_clase = 'La fecha es requerida';
-    }
-
-    if (!editFormData.hora_inicio) {
-      newErrors.hora_inicio = 'La hora de inicio es requerida';
-    }
-
-    if (!editFormData.hora_fin) {
-      newErrors.hora_fin = 'La hora de fin es requerida';
-    }
-
-    if (editFormData.hora_inicio && editFormData.hora_fin) {
-      const inicio = new Date(`2000-01-01T${editFormData.hora_inicio}:00`);
-      const fin = new Date(`2000-01-01T${editFormData.hora_fin}:00`);
-      if (fin <= inicio) {
-        newErrors.hora_fin = 'La hora de fin debe ser mayor que la hora de inicio';
-      }
-    }
-
-    setEditErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSaveEdit = async () => {
-    if (!validateEditForm()) {
+    if (Object.keys(errors).length > 0) {
+      setEditErrors(errors);
       return;
     }
 
     setEditLoading(true);
     try {
-      const formatTimeForAPI = (time) => {
-        if (!time) return '';
-        if (time.length === 5) return `${time}:00`;
-        return time;
-      };
-
-      const updateData = {
-        fecha_clase: editFormData.fecha_clase,
-        hora_inicio: formatTimeForAPI(editFormData.hora_inicio),
-        hora_fin: formatTimeForAPI(editFormData.hora_fin),
-        estado: editFormData.estado,
-      };
-
-      const claseId = editDialog.clase.id_clase || editDialog.clase.id;
-      await claseService.update(claseId, updateData);
-      
-      setSnackbar({
-        open: true,
-        message: 'Clase actualizada correctamente',
-        severity: 'success',
-      });
+      await claseService.update(editDialog.clase.id_clase, editFormData);
+      setSnackbar({ open: true, message: 'Clase actualizada correctamente', severity: 'success' });
       handleCloseEditDialog();
-      await loadClases();
+      loadClasesWithParams();
     } catch (error) {
-      console.error('Error al actualizar clase:', error);
-      setSnackbar({
-        open: true,
-        message: error.message || 'Error al actualizar la clase. Por favor, intente nuevamente.',
-        severity: 'error',
-      });
+      setSnackbar({ open: true, message: error.message || 'Error al actualizar la clase', severity: 'error' });
     } finally {
       setEditLoading(false);
     }
   };
 
-  const handleOpenDetailDialog = async (clase) => {
-    // Cargar detalles completos de la clase si es necesario
-    try {
-      const claseId = clase.id_clase || clase.id;
-      const claseCompleta = await claseService.getById(claseId);
-      setDetailDialog({ open: true, clase: claseCompleta || clase });
-    } catch (error) {
-      console.error('Error al cargar detalles de la clase:', error);
-      setDetailDialog({ open: true, clase });
-    }
+  const handleOpenDetailDialog = (clase) => {
+    setDetailDialog({ open: true, clase });
   };
 
   const handleCloseDetailDialog = () => {
     setDetailDialog({ open: false, clase: null });
   };
 
-  // Helper para obtener el nombre del grupo
-  const getGrupoNombre = (clase) => {
-    return clase.grupo?.nombre || clase.id_grupo || 'N/A';
+  const getEstadoBadge = (estado) => {
+    const estados = {
+      pendiente: { variant: 'warning', label: 'Pendiente' },
+      realizada: { variant: 'success', label: 'Realizada' },
+      suspendida: { variant: 'error', label: 'Suspendida' },
+      cancelada: { variant: 'default', label: 'Cancelada' },
+    };
+    return estados[estado] || { variant: 'default', label: estado };
   };
 
-  // Helper para formatear la hora
-  const formatTime = (time) => {
-    if (!time) return '-';
-    // Si viene en formato HH:MM:SS, tomar solo HH:MM
-    if (time.length >= 5) {
-      return time.substring(0, 5);
+  const getAsistenciaBadge = (clase) => {
+    const totalEmpleados = parseInt(clase.total_empleados_asistencia) || 0;
+    const totalAlumnos = parseInt(clase.total_alumnos_asistencia) || 0;
+    if (totalEmpleados > 0 || totalAlumnos > 0) {
+      return { variant: 'success', label: 'Registrada' };
     }
-    return time;
-  };
-
-  // Helper para obtener el rango de horas
-  const getHorario = (clase) => {
-    const inicio = formatTime(clase.hora_inicio);
-    const fin = formatTime(clase.hora_fin);
-    if (inicio && fin) {
-      return `${inicio} - ${fin}`;
-    }
-    return inicio || fin || '-';
-  };
-
-  // Helper para obtener la capacidad
-  const getCapacidad = (clase) => {
-    return clase.grupo?.cupo_maximo || clase.cupo_maximo || '-';
-  };
-
-  // Helper para obtener los inscriptos (probablemente se calcula de alguna relación)
-  const getInscriptos = (clase) => {
-    // Si hay un campo directo, usarlo
-    if (clase.inscriptos !== undefined) {
-      return clase.inscriptos;
-    }
-    // Si hay una relación con alumnos, contar
-    if (clase.alumnos && Array.isArray(clase.alumnos)) {
-      return clase.alumnos.length;
-    }
-    return 0;
-  };
-
-  // Helper para obtener el estado
-  const getEstado = (clase) => {
-    if (clase.estado === 'realizada' || clase.estado === 1) {
-      return 'Realizada';
-    }
-    if (clase.estado === 'suspendida' || clase.estado === 0) {
-      return 'Suspendida';
-    }
-    if (clase.estado === 'pendiente') {
-      return 'Pendiente';
-    }
-    return 'Desconocido';
-  };
-
-  // Helper para obtener el color del estado
-  const getEstadoColor = (clase) => {
-    const estado = clase.estado;
-    if (estado === 'realizada' || estado === 1) {
-      return 'success';
-    }
-    if (estado === 'suspendida' || estado === 0) {
-      return 'error';
-    }
-    if (estado === 'pendiente') {
-      return 'warning';
-    }
-    return 'default';
-  };
-
-  const handleClearFilters = () => {
-    setFilters({
-      idGrupo: '',
-      idDisciplina: '',
-      idCategoria: '',
-      estado: '',
-      fechaDesde: '',
-      fechaHasta: '',
-    });
+    return { variant: 'default', label: 'Pendiente' };
   };
 
   return (
-    <Box>
-      <Box
-        sx={{
-          mb: 3,
-          display: 'flex',
-          justifyContent: 'flex-end',
-        }}
-      >
-        {canEdit && (
-          <Button
-            variant="contained"
-            startIcon={generating ? <CircularProgress size={20} color="inherit" /> : <PlayArrowIcon />}
-            onClick={handleGenerarClases}
-            disabled={generating || loading}
-          >
-            {generating ? 'Generando...' : 'Generar Clases'}
-          </Button>
-        )}
-      </Box>
-
-<Accordion 
-        defaultExpanded={false}
-        disableGutters 
-        sx={{ 
-          backgroundColor: 'rgba(255, 255, 255, 0.95)', 
-          borderRadius: '8px !important',
-          boxShadow: 'none',
-          '&:before': { display: 'none' },
-          mb: 1,
-          '& .MuiAccordionSummary-root': {
-            minHeight: 40,
-            p: '0 8px',
-          },
-          '& .MuiAccordionSummary-content': {
-            my: 1,
-          },
-        }}
-      >
-        <AccordionSummary 
-          expandIcon={<ExpandMoreIcon />}
-          sx={{ 
-            minHeight: 40, 
-            p: '0 8px',
-          }}
+    <div>
+      {/* Filters */}
+      <div className="bg-white/95 rounded-lg mb-3 overflow-hidden border border-gray-200">
+        <button 
+          className="w-full px-4 py-2 flex items-center gap-2 text-text-primary font-medium hover:bg-gray-50 transition-colors"
+          onClick={() => setFiltersExpanded(!filtersExpanded)}
         >
-          <FilterListIcon sx={{ mr: 1, fontSize: 20, color: 'primary.main' }} />
-          <Typography sx={{ fontWeight: 500 }}>Filtros</Typography>
-        </AccordionSummary>
-        <AccordionDetails sx={{ p: '8px !important' }}>
-          <ClasesFilters
-            filters={filters}
-            onFilterChange={setFilters}
-            onClearFilters={handleClearFilters}
-          />
-        </AccordionDetails>
-      </Accordion>
+          <Filter className="w-4 h-4 text-primary-main" />
+          Filtros
+          <ChevronDown className={`ml-auto w-4 h-4 transition-transform ${filtersExpanded ? 'rotate-180' : ''}`} />
+        </button>
+        {filtersExpanded && (
+          <div className="p-3 border-t border-gray-200">
+            <ClasesFilters
+              filters={filters}
+              onFilterChange={handleFilterChange}
+              onClearFilters={handleClearFilters}
+            />
+          </div>
+        )}
+      </div>
 
       {loading ? (
-        <Box display="flex" justifyContent="center" p={4}>
-          <CircularProgress />
-        </Box>
+        <div className="flex justify-center p-8">
+          <Spinner size="lg" />
+        </div>
       ) : isMobile ? (
-        <>
-          <Stack spacing={2}>
-            {clases.length === 0 ? (
-              <Typography variant="body1" color="text.secondary" textAlign="center" p={4}>
-                No hay clases registradas
-              </Typography>
-            ) : (
-              clases.map((clase) => (
-                <Card variant="outlined" key={clase.id_clase || clase.id} sx={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', borderRadius: 2 }}>
-                  <CardContent>
-                    <Typography variant="h6" gutterBottom>
-                      {getGrupoNombre(clase)}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Fecha: {formatDate(clase.fecha_clase)}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Horario: {getHorario(clase)}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Capacidad: {getInscriptos(clase)}/{getCapacidad(clase)}
-                    </Typography>
-                    <Box sx={{ mt: 1, mb: 1 }}>
-                      <Chip
-                        label={getEstado(clase)}
-                        color={getEstadoColor(clase)}
-                        size="small"
-                      />
-                    </Box>
-                    <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
-                      {canEdit && (
-                        <IconButton size="small" color="primary" onClick={() => handleOpenEditDialog(clase)}>
-                          <EditIcon />
-                        </IconButton>
-                      )}
-                      <IconButton size="small" color="primary" onClick={() => handleOpenDetailDialog(clase)}>
-                        <VisibilityIcon />
-                      </IconButton>
-                    </Box>
-                  </CardContent>
+        <div className="space-y-3">
+          {clases.length === 0 ? (
+            <p className="text-center text-text-secondary p-8">No hay clases registradas</p>
+          ) : (
+            clases.map((clase) => {
+              const badge = getEstadoBadge(clase.estado);
+              const asistenciaBadge = getAsistenciaBadge(clase);
+              return (
+                <Card key={clase.id_clase} hover onClick={() => handleOpenDetailDialog(clase)}>
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-start">
+                      <h3 className="font-semibold text-text-primary">{clase.grupo?.nombre || 'Sin grupo'}</h3>
+                      <Chip label={badge.label} variant={badge.variant} size="sm" />
+                    </div>
+                    <p className="text-sm text-text-secondary">
+                      {formatDate(clase.fecha_clase)} - {clase.hora_inicio?.slice(0, 5)} a {clase.hora_fin?.slice(0, 5)}
+                    </p>
+                    <p className="text-sm text-text-secondary">
+                      Disciplina: {clase.grupo?.disciplina?.disciplina || 'N/A'}
+                    </p>
+                    <p className="text-sm text-text-secondary">
+                      Asistencia empleados: <Chip label={asistenciaBadge.label} variant={asistenciaBadge.variant} size="sm" />
+                    </p>
+                    {canEdit && (
+                      <div className="flex gap-2 mt-2" onClick={(e) => e.stopPropagation()}>
+                        <Button size="sm" icon={Edit} onClick={() => handleOpenEditDialog(clase)}>Editar</Button>
+                      </div>
+                    )}
+                  </div>
                 </Card>
-              ))
-            )}
-          </Stack>
-          <Pagination
-            pagination={pagination}
-            onPageChange={handlePageChange}
-            onLimitChange={handleLimitChange}
-          />
-        </>
+              );
+            })
+          )}
+        </div>
       ) : (
-        <>
-          <TableContainer component={Paper} sx={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', borderRadius: 2 }}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Grupo</TableCell>
-                  <TableCell>Fecha</TableCell>
-                  <TableCell>Horario</TableCell>
-                  <TableCell>Capacidad</TableCell>
-                  <TableCell>Inscriptos</TableCell>
-                  <TableCell>Estado</TableCell>
-                  {canEdit && <TableCell align="right">Acciones</TableCell>}
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {clases.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={isProfesor ? 6 : 7} align="center">
-                      <Typography variant="body1" color="text.secondary" p={2}>
-                        No hay clases registradas
-                      </Typography>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableHeadCell>Fecha</TableHeadCell>
+              <TableHeadCell>Hora Inicio</TableHeadCell>
+              <TableHeadCell>Hora Fin</TableHeadCell>
+              <TableHeadCell>Grupo</TableHeadCell>
+              <TableHeadCell>Disciplina</TableHeadCell>
+              <TableHeadCell>Estado</TableHeadCell>
+              <TableHeadCell>Asistencia</TableHeadCell>
+              {canEdit && <TableHeadCell className="text-right">Acciones</TableHeadCell>}
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {clases.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={canEdit ? 8 : 7} className="text-center">
+                  No hay clases registradas
+                </TableCell>
+              </TableRow>
+            ) : (
+              clases.map((clase) => {
+                const badge = getEstadoBadge(clase.estado);
+                const asistenciaBadge = getAsistenciaBadge(clase);
+                return (
+                  <TableRow key={clase.id_clase} hover onClick={() => handleOpenDetailDialog(clase)}>
+                    <TableCell>{formatDate(clase.fecha_clase)}</TableCell>
+                    <TableCell>{clase.hora_inicio?.slice(0, 5)}</TableCell>
+                    <TableCell>{clase.hora_fin?.slice(0, 5)}</TableCell>
+                    <TableCell>{clase.grupo?.nombre || 'N/A'}</TableCell>
+                    <TableCell>{clase.grupo?.disciplina?.disciplina || 'N/A'}</TableCell>
+                    <TableCell>
+                      <Chip label={badge.label} variant={badge.variant} size="sm" />
                     </TableCell>
+                    <TableCell>
+                      <Chip label={asistenciaBadge.label} variant={asistenciaBadge.variant} size="sm" />
+                    </TableCell>
+                    {canEdit && (
+                      <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex justify-end gap-1">
+                          <button 
+                            onClick={() => handleOpenEditDialog(clase)}
+                            className="p-1.5 rounded-lg hover:bg-primary-main/10 text-primary-main"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </TableCell>
+                    )}
                   </TableRow>
-                ) : (
-                  clases.map((clase) => (
-                    <TableRow key={clase.id_clase || clase.id} hover>
-                      <TableCell>{getGrupoNombre(clase)}</TableCell>
-                      <TableCell>{formatDate(clase.fecha_clase)}</TableCell>
-                      <TableCell>{getHorario(clase)}</TableCell>
-                      <TableCell>{getCapacidad(clase)}</TableCell>
-                      <TableCell>{getInscriptos(clase)}</TableCell>
-                      <TableCell>
-                        <Chip
-                          label={getEstado(clase)}
-                          color={getEstadoColor(clase)}
-                          size="small"
-                        />
-                      </TableCell>
-                      <TableCell align="right">
-                        <Stack direction="row" spacing={1} justifyContent="flex-end">
-                          {canEdit && (
-                            <IconButton size="small" color="primary" onClick={() => handleOpenEditDialog(clase)}>
-                              <EditIcon />
-                            </IconButton>
-                          )}
-                          <IconButton size="small" color="primary" onClick={() => handleOpenDetailDialog(clase)}>
-                            <VisibilityIcon />
-                          </IconButton>
-                        </Stack>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-          
-          <Pagination
-            pagination={pagination}
-            onPageChange={handlePageChange}
-            onLimitChange={handleLimitChange}
-          />
-        </>
+                );
+              })
+            )}
+          </TableBody>
+        </Table>
       )}
 
-      {/* Dialog para editar clase */}
-      <Dialog
+      <Pagination
+        pagination={pagination}
+        onPageChange={handlePageChange}
+        onLimitChange={handleLimitChange}
+      />
+
+      {/* Edit Dialog */}
+      <Modal
         open={editDialog.open}
         onClose={handleCloseEditDialog}
-        maxWidth="sm"
-        fullWidth
-        fullScreen={isMobile}
+        title="Editar Clase"
+        size="md"
+        footer={
+          <div className="flex justify-end gap-3">
+            <Button variant="ghost" onClick={handleCloseEditDialog}>Cancelar</Button>
+            <Button variant="primary" icon={Save} onClick={handleEditSubmit} loading={editLoading}>
+              Guardar
+            </Button>
+          </div>
+        }
       >
-        <DialogTitle>
-          Editar Clase
-        </DialogTitle>
-        <DialogContent>
-          <Box sx={{ pt: 2 }}>
-            <Stack spacing={3}>
-              <TextField
-                label="Fecha"
-                name="fecha_clase"
-                type="date"
-                value={editFormData.fecha_clase || ''}
-                onChange={handleEditFormChange}
-                required
-                fullWidth
-                InputLabelProps={{ shrink: true }}
-                error={!!editErrors.fecha_clase}
-                helperText={editErrors.fecha_clase}
-              />
-
-              <TextField
-                label="Hora de Inicio"
-                name="hora_inicio"
-                type="time"
-                value={editFormData.hora_inicio || ''}
-                onChange={handleEditFormChange}
-                required
-                fullWidth
-                InputLabelProps={{ shrink: true }}
-                error={!!editErrors.hora_inicio}
-                helperText={editErrors.hora_inicio}
-                inputProps={{
-                  step: 300, // 5 minutos
-                }}
-              />
-
-              <TextField
-                label="Hora de Fin"
-                name="hora_fin"
-                type="time"
-                value={editFormData.hora_fin || ''}
-                onChange={handleEditFormChange}
-                required
-                fullWidth
-                InputLabelProps={{ shrink: true }}
-                error={!!editErrors.hora_fin}
-                helperText={editErrors.hora_fin}
-                inputProps={{
-                  step: 300, // 5 minutos
-                }}
-              />
-
-              <FormControl fullWidth>
-                <InputLabel>Estado</InputLabel>
-                <Select
-                  name="estado"
-                  value={editFormData.estado || 'pendiente'}
-                  onChange={handleEditFormChange}
-                  label="Estado"
-                >
-                  <MenuItem value="pendiente">Pendiente</MenuItem>
-                  <MenuItem value="realizada">Realizada</MenuItem>
-                  <MenuItem value="suspendida">Suspendida</MenuItem>
-                </Select>
-              </FormControl>
-            </Stack>
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseEditDialog} disabled={editLoading}>
-            Cancelar
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={editLoading ? <CircularProgress size={20} /> : <SaveIcon />}
-            onClick={handleSaveEdit}
-            disabled={editLoading}
+        <div className="space-y-4">
+          <Input
+            label="Fecha"
+            type="date"
+            name="fecha_clase"
+            value={editFormData.fecha_clase || ''}
+            onChange={handleEditInputChange}
+            error={editErrors.fecha_clase}
+          />
+          <Input
+            label="Hora Inicio"
+            type="time"
+            name="hora_inicio"
+            value={editFormData.hora_inicio || ''}
+            onChange={handleEditInputChange}
+            error={editErrors.hora_inicio}
+          />
+          <Input
+            label="Hora Fin"
+            type="time"
+            name="hora_fin"
+            value={editFormData.hora_fin || ''}
+            onChange={handleEditInputChange}
+            error={editErrors.hora_fin}
+          />
+          <Select
+            label="Estado"
+            name="estado"
+            value={editFormData.estado || ''}
+            onChange={handleEditInputChange}
           >
-            {editLoading ? 'Guardando...' : 'Guardar'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+            <option value="pendiente">Pendiente</option>
+            <option value="realizada">Realizada</option>
+            <option value="suspendida">Suspendida</option>
+            <option value="cancelada">Cancelada</option>
+          </Select>
+        </div>
+      </Modal>
 
-      {/* Dialog para ver detalles de clase */}
-      <Dialog
+      {/* Detail Dialog */}
+      <Modal
         open={detailDialog.open}
         onClose={handleCloseDetailDialog}
-        maxWidth="md"
-        fullWidth
-        fullScreen={isMobile}
+        title="Detalles de la Clase"
+        size="lg"
       >
-        <DialogTitle>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="h6">Detalles de la Clase</Typography>
-            <IconButton onClick={handleCloseDetailDialog} size="small">
-              <CloseIcon />
-            </IconButton>
-          </Box>
-        </DialogTitle>
-        <DialogContent>
-          {detailDialog.clase && (
-            <Box sx={{ pt: 2 }}>
-              <Grid container spacing={3}>
-                <Grid item xs={12}>
-                  <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>
-                    Información de la Clase
-                  </Typography>
-                  <Divider sx={{ mb: 2 }} />
-                </Grid>
+        {detailDialog.clase && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm text-text-secondary">Fecha</p>
+                <p className="font-medium">{formatDate(detailDialog.clase.fecha_clase)}</p>
+              </div>
+              <div>
+                <p className="text-sm text-text-secondary">Estado</p>
+                <Chip {...getEstadoBadge(detailDialog.clase.estado)} />
+              </div>
+              <div>
+                <p className="text-sm text-text-secondary">Hora Inicio</p>
+                <p className="font-medium">{detailDialog.clase.hora_inicio?.slice(0, 5)}</p>
+              </div>
+              <div>
+                <p className="text-sm text-text-secondary">Hora Fin</p>
+                <p className="font-medium">{detailDialog.clase.hora_fin?.slice(0, 5)}</p>
+              </div>
+              <div>
+                <p className="text-sm text-text-secondary">Grupo</p>
+                <p className="font-medium">{detailDialog.clase.grupo?.nombre || 'N/A'}</p>
+              </div>
+              <div>
+                <p className="text-sm text-text-secondary">Disciplina</p>
+                <p className="font-medium">{detailDialog.clase.grupo?.disciplina?.disciplina || 'N/A'}</p>
+              </div>
+            </div>
 
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="body2" color="text.secondary">
-                    Grupo
-                  </Typography>
-                  <Typography variant="body1" sx={{ mb: 2 }}>
-                    {getGrupoNombre(detailDialog.clase)}
-                  </Typography>
-                </Grid>
+            <hr className="border-gray-200" />
+            <AsistenciaEmpleados idClase={detailDialog.clase.id_clase} onAsistenciaGuardada={() => loadClasesWithParams()} />
+            <hr className="border-gray-200" />
+            <AsistenciaAlumnos idClase={detailDialog.clase.id_clase} onAsistenciaGuardada={() => loadClasesWithParams()} />
+          </div>
+        )}
+      </Modal>
 
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="body2" color="text.secondary">
-                    Fecha
-                  </Typography>
-                  <Typography variant="body1" sx={{ mb: 2 }}>
-                    {formatDate(detailDialog.clase.fecha_clase)}
-                  </Typography>
-                </Grid>
-
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="body2" color="text.secondary">
-                    Horario
-                  </Typography>
-                  <Typography variant="body1" sx={{ mb: 2 }}>
-                    {getHorario(detailDialog.clase)}
-                  </Typography>
-                </Grid>
-
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="body2" color="text.secondary">
-                    Estado
-                  </Typography>
-                  <Box sx={{ mb: 2 }}>
-                    <Chip
-                      label={getEstado(detailDialog.clase)}
-                      color={getEstadoColor(detailDialog.clase)}
-                      size="small"
-                    />
-                  </Box>
-                </Grid>
-
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="body2" color="text.secondary">
-                    Capacidad
-                  </Typography>
-                  <Typography variant="body1" sx={{ mb: 2 }}>
-                    {getCapacidad(detailDialog.clase)}
-                  </Typography>
-                </Grid>
-
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="body2" color="text.secondary">
-                    Inscriptos
-                  </Typography>
-                  <Typography variant="body1" sx={{ mb: 2 }}>
-                    {getInscriptos(detailDialog.clase)}
-                  </Typography>
-                </Grid>
-
-                {detailDialog.clase.grupo && (
-                  <>
-                    <Grid item xs={12}>
-                      <Divider sx={{ my: 2 }} />
-                      <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>
-                        Información del Grupo
-                      </Typography>
-                    </Grid>
-
-                    <Grid item xs={12} sm={6}>
-                      <Typography variant="body2" color="text.secondary">
-                        Disciplina
-                      </Typography>
-                      <Typography variant="body1" sx={{ mb: 2 }}>
-                        {detailDialog.clase.grupo.disciplina?.disciplina || 'N/A'}
-                      </Typography>
-                    </Grid>
-
-                    <Grid item xs={12} sm={6}>
-                      <Typography variant="body2" color="text.secondary">
-                        Categoría
-                      </Typography>
-                      <Typography variant="body1" sx={{ mb: 2 }}>
-                        {detailDialog.clase.grupo.categoria?.categoria || 'N/A'}
-                      </Typography>
-                    </Grid>
-                  </>
-                )}
-              </Grid>
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDetailDialog}>Cerrar</Button>
-          {canEdit && detailDialog.clase && (
-            <Button
-              variant="contained"
-              startIcon={<EditIcon />}
-              onClick={() => {
-                handleCloseDetailDialog();
-                handleOpenEditDialog(detailDialog.clase);
-              }}
-            >
-              Editar
-            </Button>
-          )}
-        </DialogActions>
-      </Dialog>
-
-      {/* Snackbar para mostrar mensajes */}
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={6000}
-        onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-      >
-        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
-    </Box>
+      {/* Snackbar */}
+      {snackbar.open && (
+        <div className={`fixed bottom-4 right-4 px-4 py-3 rounded-lg shadow-lg z-50 ${
+          snackbar.severity === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
+        }`}>
+          <div className="flex items-center gap-3">
+            <span>{snackbar.message}</span>
+            <button onClick={() => setSnackbar({ ...snackbar, open: false })} className="hover:opacity-80">✕</button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
 export default Clases;
-

@@ -1,38 +1,5 @@
 import React from 'react';
-import {
-  Box,
-  Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  IconButton,
-  CircularProgress,
-  Stack,
-  Typography,
-  Chip,
-  useMediaQuery,
-  useTheme,
-  Card,
-  CardContent,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-} from '@mui/material';
-import {
-  Add as AddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  ExpandMore as ExpandMoreIcon,
-  FilterList as FilterListIcon,
-} from '@mui/icons-material';
+import { Plus, Edit, Trash2, ChevronDown, Filter } from 'lucide-react';
 import * as grupoService from '../../services/grupoService';
 import GrupoForm from '../../components/Forms/GrupoForm';
 import ConfirmDeleteDialog from '../../components/Dialogs/ConfirmDeleteDialog';
@@ -40,6 +7,7 @@ import GruposFilters from '../../components/grupos/GruposFilters';
 import Pagination from '../../components/Pagination/Pagination';
 import { obtenerNombreDia, DIAS_SEMANA } from '../../utils/constants';
 import { useAuth } from '../../hooks/useAuth';
+import { Button, Modal, Spinner, Table, TableHead, TableBody, TableRow, TableHeadCell, TableCell, Chip, Card } from '../../components/ui';
 
 function Grupos() {
   const { userRole } = useAuth();
@@ -58,12 +26,19 @@ function Grupos() {
     nombre: '',
   });
   const [pagination, setPagination] = React.useState({ page: 1, limit: 10, total: 0, totalPages: 0 });
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const [isMobile, setIsMobile] = React.useState(false);
+  const [filtersExpanded, setFiltersExpanded] = React.useState(false);
+
+  React.useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 640);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   React.useEffect(() => {
     loadGrupos(pagination.page, pagination.limit);
-  }, [filters]);
+  }, [filters, pagination.page, pagination.limit]);
 
   const loadGrupos = async (page, limit) => {
     setLoading(true);
@@ -71,7 +46,7 @@ function Grupos() {
       const filtrosBackend = {};
       if (filters.idDisciplina) filtrosBackend.idDisciplina = parseInt(filters.idDisciplina);
       if (filters.idCategoria) filtrosBackend.idCategoria = parseInt(filters.idCategoria);
-      if (filters.estado !== '') filtrosBackend.estado = filters.estado;
+      if (filters.estado !== '') filtrosBackend.estado = filters.estado === 'activo' ? 1 : 0;
       if (filters.nombre) filtrosBackend.nombre = filters.nombre;
 
       const result = await grupoService.getAll({ page, limit, filters: filtrosBackend });
@@ -89,22 +64,11 @@ function Grupos() {
 
   const handlePageChange = (newPage) => {
     setPagination(prev => ({ ...prev, page: newPage }));
-    loadGrupos(newPage, pagination.limit);
   };
 
   const handleLimitChange = (newLimit) => {
     const limitNum = parseInt(newLimit, 10);
     setPagination(prev => ({ ...prev, limit: limitNum, page: 1 }));
-    loadGrupos(1, limitNum);
-  };
-
-  const handleClearFilters = () => {
-    setFilters({
-      idDisciplina: '',
-      idCategoria: '',
-      estado: '',
-      nombre: '',
-    });
   };
 
   const handleOpenModal = (item = null) => {
@@ -119,11 +83,15 @@ function Grupos() {
 
   const handleSuccess = () => {
     handleCloseModal();
-    loadGrupos(pagination.page, pagination.limit);
+    loadGrupos();
   };
 
   const handleDeleteClick = (item) => {
     setDeleteDialog({ open: true, item });
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteDialog({ open: false, item: null });
   };
 
   const handleDeleteConfirm = async () => {
@@ -131,234 +99,153 @@ function Grupos() {
       try {
         await grupoService.deleteById(deleteDialog.item.id_grupo);
         setDeleteDialog({ open: false, item: null });
-        loadGrupos(pagination.page, pagination.limit);
+        loadGrupos();
       } catch (error) {
         console.error('Error al eliminar grupo:', error);
-        alert('Error al eliminar el grupo. Por favor, intente nuevamente.');
+        alert('Error al eliminar el grupo. Verifique que no tenga clases asociadas.');
       }
     }
   };
 
-  const handleDeleteCancel = () => {
-    setDeleteDialog({ open: false, item: null });
+  const handleFilterChange = (newFilters) => {
+    setFilters(newFilters);
   };
 
-  const getEstadoColor = (estado) => {
-    return estado === 1 ? 'success' : 'default';
+  const handleClearFilters = () => {
+    setFilters({ idDisciplina: '', idCategoria: '', estado: '', nombre: '' });
   };
 
-  const getEstadoLabel = (estado) => {
-    return estado === 1 ? 'Activo' : 'Inactivo';
+  const getEstadoBadge = (estado) => {
+    const estados = {
+      activo: { variant: 'success', label: 'Activo' },
+      inactivo: { variant: 'default', label: 'Inactivo' },
+      1: { variant: 'success', label: 'Activo' },
+      0: { variant: 'default', label: 'Inactivo' },
+    };
+    return estados[estado] || { variant: 'default', label: estado };
   };
-
-  const formatearHorarios = (horarios) => {
-    if (!horarios || horarios.length === 0) {
-      return 'Sin horarios configurados';
-    }
-
-    // Filtrar solo horarios activos
-    const horariosActivos = horarios.filter(h => h.activo === 1);
-    if (horariosActivos.length === 0) {
-      return 'Sin horarios activos';
-    }
-
-    // Agrupar por hora
-    const horariosPorHora = {};
-    horariosActivos.forEach(horario => {
-      const horaInicio = horario.hora_inicio?.substring(0, 5) || horario.hora_inicio;
-      const horaFin = horario.hora_fin?.substring(0, 5) || horario.hora_fin;
-      const key = `${horaInicio}-${horaFin}`;
-      
-      if (!horariosPorHora[key]) {
-        horariosPorHora[key] = {
-          hora: `${horaInicio} - ${horaFin}`,
-          dias: []
-        };
-      }
-      horariosPorHora[key].dias.push(obtenerNombreDia(horario.dia_semana));
-    });
-
-    // Formatear resultado
-    return Object.values(horariosPorHora).map(item => {
-      const diasAbreviados = item.dias.map(dia => {
-        const index = DIAS_SEMANA.indexOf(dia);
-        if (index === -1) return dia;
-        // Abreviar días: Lunes -> Lun, Miércoles -> Mié, etc.
-        return dia.substring(0, 3);
-      });
-      return `${diasAbreviados.join(', ')} ${item.hora}`;
-    }).join(' | ');
-  };
-
 
   return (
-    <Box>
-      <Box
-        sx={{
-          mb: 3,
-          display: 'flex',
-          justifyContent: 'flex-end',
-        }}
-      >
-        {canEdit ? (
-          <Button variant="contained" startIcon={<AddIcon />} onClick={handleOpenModal}>
-            Crear Nuevo Grupo
+    <div>
+      <div className="flex justify-end mb-4">
+        {canEdit && (
+          <Button variant="primary" icon={Plus} onClick={() => handleOpenModal()}>
+            Nuevo Grupo
           </Button>
-        ) : null}
-      </Box>
+        )}
+      </div>
 
-      <Accordion 
-        defaultExpanded={false}
-        disableGutters 
-        sx={{ 
-          backgroundColor: 'rgba(255, 255, 255, 0.95)', 
-          borderRadius: '8px !important',
-          boxShadow: 'none',
-          '&:before': { display: 'none' },
-          mb: 1,
-          '& .MuiAccordionSummary-root': {
-            minHeight: 40,
-            p: '0 8px',
-          },
-          '& .MuiAccordionSummary-content': {
-            my: 1,
-          },
-        }}
-      >
-        <AccordionSummary 
-          expandIcon={<ExpandMoreIcon />}
-          sx={{ 
-            minHeight: 40, 
-            p: '0 8px',
-          }}
+      {/* Filters */}
+      <div className="bg-white/95 rounded-lg mb-3 overflow-hidden border border-gray-200">
+        <button 
+          className="w-full px-4 py-2 flex items-center gap-2 text-text-primary font-medium hover:bg-gray-50 transition-colors"
+          onClick={() => setFiltersExpanded(!filtersExpanded)}
         >
-          <FilterListIcon sx={{ mr: 1, fontSize: 20, color: 'primary.main' }} />
-          <Typography sx={{ fontWeight: 500 }}>Filtros</Typography>
-        </AccordionSummary>
-        <AccordionDetails sx={{ p: '8px !important' }}>
-          <GruposFilters
-            filters={filters}
-            onFilterChange={setFilters}
-            onClearFilters={handleClearFilters}
-          />
-        </AccordionDetails>
-      </Accordion>
+          <Filter className="w-4 h-4 text-primary-main" />
+          Filtros
+          <ChevronDown className={`ml-auto w-4 h-4 transition-transform ${filtersExpanded ? 'rotate-180' : ''}`} />
+        </button>
+        {filtersExpanded && (
+          <div className="p-3 border-t border-gray-200">
+            <GruposFilters
+              filters={filters}
+              onFilterChange={handleFilterChange}
+              onClearFilters={handleClearFilters}
+            />
+          </div>
+        )}
+      </div>
 
       {loading ? (
-        <Box display="flex" justifyContent="center" p={4}>
-          <CircularProgress />
-        </Box>
+        <div className="flex justify-center p-8">
+          <Spinner size="lg" />
+        </div>
       ) : isMobile ? (
-        <Stack spacing={2}>
+        <div className="space-y-3">
           {grupos.length === 0 ? (
-            <Typography variant="body1" color="text.secondary" textAlign="center" p={4}>
-              No hay grupos registrados
-            </Typography>
+            <p className="text-center text-text-secondary p-8">No hay grupos registrados</p>
           ) : (
-            grupos.map((grupo) => (
-              <Card key={grupo.id_grupo} variant="outlined" sx={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', borderRadius: 2 }}>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom>
-                    {grupo.nombre}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Cupo Máximo: {grupo.cupo_maximo}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Disciplina: {grupo.disciplina?.disciplina || 'N/A'}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Categoría: {grupo.categoria?.categoria || 'N/A'}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                    Horarios: {formatearHorarios(grupo.horarios)}
-                  </Typography>
-                  <Box sx={{ mt: 1, mb: 1 }}>
-                    <Chip
-                      label={getEstadoLabel(grupo.estado)}
-                      color={getEstadoColor(grupo.estado)}
-                      size="small"
-                    />
-                  </Box>
-                  {canEdit && (
-                    <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
-                      <IconButton size="small" color="primary" onClick={() => handleOpenModal(grupo)}>
-                        <EditIcon />
-                      </IconButton>
-                      <IconButton size="small" color="error" onClick={() => handleDeleteClick(grupo)}>
-                        <DeleteIcon />
-                      </IconButton>
-                    </Box>
-                  )}
-                </CardContent>
-              </Card>
-            ))
+            grupos.map((grupo) => {
+              const badge = getEstadoBadge(grupo.estado);
+              return (
+                <Card key={grupo.id_grupo} hover>
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-start">
+                      <h3 className="font-semibold text-text-primary">{grupo.nombre}</h3>
+                      <Chip label={badge.label} variant={badge.variant} size="sm" />
+                    </div>
+                    <p className="text-sm text-text-secondary">
+                      Disciplina: {grupo.disciplina?.disciplina || 'N/A'}
+                    </p>
+                    <p className="text-sm text-text-secondary">
+                      Categoría: {grupo.categoria?.categoria || 'N/A'}
+                    </p>
+                    <p className="text-sm text-text-secondary">
+                      Horario: {grupo.horarios?.map(h => `${obtenerNombreDia(h.dia_semana ?? h.dia)} ${h.hora_inicio?.slice(0,5)}-${h.hora_fin?.slice(0,5)}`).join(', ') || 'Sin horario'}
+                    </p>
+                    {canEdit && (
+                      <div className="flex gap-2 mt-2">
+                        <Button size="sm" icon={Edit} onClick={() => handleOpenModal(grupo)}>Editar</Button>
+                        <Button size="sm" variant="danger" icon={Trash2} onClick={() => handleDeleteClick(grupo)}>Eliminar</Button>
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              );
+            })
           )}
-        </Stack>
+        </div>
       ) : (
-        <TableContainer component={Paper} sx={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', borderRadius: 2 }}>
-          <Table>
-            <TableHead>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableHeadCell>Nombre</TableHeadCell>
+              <TableHeadCell>Disciplina</TableHeadCell>
+              <TableHeadCell>Categoría</TableHeadCell>
+              <TableHeadCell>Horario</TableHeadCell>
+              <TableHeadCell>Estado</TableHeadCell>
+              {canEdit && <TableHeadCell className="text-right">Acciones</TableHeadCell>}
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {grupos.length === 0 ? (
               <TableRow>
-                <TableCell>Nombre</TableCell>
-                <TableCell>Cupo Máximo</TableCell>
-                <TableCell>Disciplina</TableCell>
-                <TableCell>Categoría</TableCell>
-                <TableCell>Horarios</TableCell>
-                <TableCell>Estado</TableCell>
-                {canEdit && <TableCell align="right">Acciones</TableCell>}
+                <TableCell colSpan={canEdit ? 6 : 5} className="text-center">
+                  No hay grupos registrados
+                </TableCell>
               </TableRow>
-            </TableHead>
-            <TableBody>
-              {grupos.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={canEdit ? 7 : 6} align="center">
-                    <Typography variant="body1" color="text.secondary" p={2}>
-                      No hay grupos registrados
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                grupos.map((grupo) => (
+            ) : (
+              grupos.map((grupo) => {
+                const badge = getEstadoBadge(grupo.estado);
+                return (
                   <TableRow key={grupo.id_grupo} hover>
-                    <TableCell>{grupo.nombre}</TableCell>
-                    <TableCell>{grupo.cupo_maximo}</TableCell>
+                    <TableCell className="font-medium">{grupo.nombre}</TableCell>
+                    <TableCell>{grupo.disciplina?.disciplina || 'N/A'}</TableCell>
+                    <TableCell>{grupo.categoria?.categoria || 'N/A'}</TableCell>
                     <TableCell>
-                      {grupo.disciplina?.disciplina || grupo.id_disciplina || 'N/A'}
+                      {grupo.horarios?.map(h => `${obtenerNombreDia(h.dia_semana ?? h.dia)} ${h.hora_inicio?.slice(0,5)}`).join(', ') || 'Sin horario'}
                     </TableCell>
                     <TableCell>
-                      {grupo.categoria?.categoria || grupo.id_categoria || 'N/A'}
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" sx={{ maxWidth: 200 }}>
-                        {formatearHorarios(grupo.horarios)}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={getEstadoLabel(grupo.estado)}
-                        color={getEstadoColor(grupo.estado)}
-                        size="small"
-                      />
+                      <Chip label={badge.label} variant={badge.variant} size="sm" />
                     </TableCell>
                     {canEdit && (
-                      <TableCell align="right">
-                        <Stack direction="row" spacing={1} justifyContent="flex-end">
-                          <IconButton size="small" color="primary" onClick={() => handleOpenModal(grupo)}>
-                            <EditIcon />
-                          </IconButton>
-                          <IconButton size="small" color="error" onClick={() => handleDeleteClick(grupo)}>
-                            <DeleteIcon />
-                          </IconButton>
-                        </Stack>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <button onClick={() => handleOpenModal(grupo)} className="p-1.5 rounded-lg hover:bg-primary-main/10 text-primary-main">
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button onClick={() => handleDeleteClick(grupo)} className="p-1.5 rounded-lg hover:bg-red-100 text-red-600">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </TableCell>
                     )}
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+                );
+              })
+            )}
+          </TableBody>
+        </Table>
       )}
 
       <Pagination
@@ -367,29 +254,21 @@ function Grupos() {
         onLimitChange={handleLimitChange}
       />
 
-      {/* Modal para crear/editar grupo */}
-      <Dialog
+      {/* Modal */}
+      <Modal
         open={openModal}
         onClose={handleCloseModal}
-        maxWidth="sm"
-        fullWidth
-        fullScreen={isMobile}
+        title={editingItem ? 'Editar Grupo' : 'Nuevo Grupo'}
+        size="lg"
       >
-        <DialogTitle>
-          {editingItem ? 'Editar Grupo' : 'Crear Nuevo Grupo'}
-        </DialogTitle>
-        <DialogContent>
-          <Box sx={{ pt: 2 }}>
-            <GrupoForm
-              onSuccess={handleSuccess}
-              onCancel={handleCloseModal}
-              initialData={editingItem}
-            />
-          </Box>
-        </DialogContent>
-      </Dialog>
+        <GrupoForm
+          onSuccess={handleSuccess}
+          onCancel={handleCloseModal}
+          initialData={editingItem}
+        />
+      </Modal>
 
-      {/* Dialog de confirmación para eliminar */}
+      {/* Delete Dialog */}
       <ConfirmDeleteDialog
         open={deleteDialog.open}
         onClose={handleDeleteCancel}
@@ -397,9 +276,8 @@ function Grupos() {
         title="el grupo"
         itemName={deleteDialog.item?.nombre || ''}
       />
-    </Box>
+    </div>
   );
 }
 
 export default Grupos;
-

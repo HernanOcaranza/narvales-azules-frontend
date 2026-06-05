@@ -1,20 +1,11 @@
 import React from 'react';
-import {
-  Box,
-  Button,
-  CircularProgress,
-  useMediaQuery,
-  useTheme,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-} from '@mui/material';
-import { Add as AddIcon } from '@mui/icons-material';
+import { Plus } from 'lucide-react';
 import * as categoriaService from '../../services/categoriaService';
 import CategoriaForm from '../../components/Forms/CategoriaForm';
 import ConfirmDeleteDialog from '../../components/Dialogs/ConfirmDeleteDialog';
 import CategoriaTable from '../../components/Tables/CategoriaTable';
 import CategoriaCards from '../../components/Cards/CategoriaCards';
+import { Button, Modal, Spinner } from '../../components/ui';
 
 function Categorias() {
   const [categorias, setCategorias] = React.useState([]);
@@ -22,18 +13,23 @@ function Categorias() {
   const [openModal, setOpenModal] = React.useState(false);
   const [editingItem, setEditingItem] = React.useState(null);
   const [deleteDialog, setDeleteDialog] = React.useState({ open: false, item: null });
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const [isMobile, setIsMobile] = React.useState(false);
 
   React.useEffect(() => {
-    loadCategorias();
+    const checkMobile = () => setIsMobile(window.innerWidth < 640);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  React.useEffect(() => { loadCategorias(); }, []);
 
   const loadCategorias = async () => {
     setLoading(true);
     try {
-      const data = await categoriaService.getAll();
-      setCategorias(Array.isArray(data) ? data : []);
+      const data = await categoriaService.getAll({ limit: 100 });
+      const categoriasData = data?.data?.data || data?.data || data || [];
+      setCategorias(Array.isArray(categoriasData) ? categoriasData : []);
     } catch (error) {
       console.error('Error al cargar categorías:', error);
       setCategorias([]);
@@ -42,25 +38,11 @@ function Categorias() {
     }
   };
 
-  const handleOpenModal = (item = null) => {
-    setEditingItem(item);
-    setOpenModal(true);
-  };
-
-  const handleCloseModal = () => {
-    setOpenModal(false);
-    setEditingItem(null);
-  };
-
-  const handleSuccess = () => {
-    handleCloseModal();
-    loadCategorias();
-  };
-
-  const handleDeleteClick = (item) => {
-    setDeleteDialog({ open: true, item });
-  };
-
+  const handleOpenModal = (item = null) => { setEditingItem(item); setOpenModal(true); };
+  const handleCloseModal = () => { setOpenModal(false); setEditingItem(null); };
+  const handleSuccess = () => { handleCloseModal(); loadCategorias(); };
+  const handleDeleteClick = (item) => setDeleteDialog({ open: true, item });
+  const handleDeleteCancel = () => setDeleteDialog({ open: false, item: null });
   const handleDeleteConfirm = async () => {
     if (deleteDialog.item) {
       try {
@@ -68,81 +50,29 @@ function Categorias() {
         setDeleteDialog({ open: false, item: null });
         loadCategorias();
       } catch (error) {
-        console.error('Error al eliminar categoría:', error);
-        alert('Error al eliminar la categoría. Por favor, intente nuevamente.');
+        alert('Error al eliminar la categoría.');
       }
     }
   };
 
-  const handleDeleteCancel = () => {
-    setDeleteDialog({ open: false, item: null });
-  };
-
   return (
-    <Box>
-      <Box
-        sx={{
-          mb: 3,
-          display: 'flex',
-          justifyContent: 'flex-end',
-        }}
-      >
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => handleOpenModal()}>
-          Nueva Categoría
-        </Button>
-      </Box>
-
+    <div>
+      <div className="flex justify-end mb-4">
+        <Button variant="primary" icon={Plus} onClick={() => handleOpenModal()}>Nueva Categoría</Button>
+      </div>
       {loading ? (
-        <Box display="flex" justifyContent="center" p={4}>
-          <CircularProgress />
-        </Box>
+        <div className="flex justify-center p-8"><Spinner size="lg" /></div>
       ) : isMobile ? (
-        <CategoriaCards
-          categorias={categorias}
-          onEdit={handleOpenModal}
-          onDelete={handleDeleteClick}
-        />
+        <CategoriaCards categorias={categorias} onEdit={handleOpenModal} onDelete={handleDeleteClick} />
       ) : (
-        <CategoriaTable
-          categorias={categorias}
-          onEdit={handleOpenModal}
-          onDelete={handleDeleteClick}
-        />
+        <CategoriaTable categorias={categorias} onEdit={handleOpenModal} onDelete={handleDeleteClick} />
       )}
-
-      {/* Modal para crear/editar categoría */}
-      <Dialog
-        open={openModal}
-        onClose={handleCloseModal}
-        maxWidth="sm"
-        fullWidth
-        fullScreen={isMobile}
-      >
-        <DialogTitle>
-          {editingItem ? 'Editar Categoría' : 'Nueva Categoría'}
-        </DialogTitle>
-        <DialogContent>
-          <Box sx={{ pt: 2 }}>
-            <CategoriaForm
-              onSuccess={handleSuccess}
-              onCancel={handleCloseModal}
-              initialData={editingItem}
-            />
-          </Box>
-        </DialogContent>
-      </Dialog>
-
-      {/* Dialog de confirmación para eliminar */}
-      <ConfirmDeleteDialog
-        open={deleteDialog.open}
-        onClose={handleDeleteCancel}
-        onConfirm={handleDeleteConfirm}
-        title="la categoría"
-        itemName={deleteDialog.item?.categoria || ''}
-      />
-    </Box>
+      <Modal open={openModal} onClose={handleCloseModal} title={editingItem ? 'Editar Categoría' : 'Nueva Categoría'} size="sm">
+        <CategoriaForm onSuccess={handleSuccess} onCancel={handleCloseModal} initialData={editingItem} />
+      </Modal>
+      <ConfirmDeleteDialog open={deleteDialog.open} onClose={handleDeleteCancel} onConfirm={handleDeleteConfirm} title="la categoría" itemName={deleteDialog.item?.categoria || ''} />
+    </div>
   );
 }
 
 export default Categorias;
-

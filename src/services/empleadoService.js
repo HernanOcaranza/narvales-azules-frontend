@@ -54,6 +54,14 @@ export const deleteById = async (id) => {
   return await api.delete(`${ENDPOINT}/${id}`);
 };
 
+export const getClasesDeEmpleado = async (idEmpleado, filters = {}) => {
+  const params = {};
+  if (filters.fechaDesde) params.fechaDesde = filters.fechaDesde;
+  if (filters.fechaHasta) params.fechaHasta = filters.fechaHasta;
+  const response = await api.get(`${ENDPOINT}/${idEmpleado}/clases`, { params });
+  return response?.data || response;
+};
+
 // Exportar todas las funciones como objeto también
 const empleadoService = {
   getAll,
@@ -61,6 +69,7 @@ const empleadoService = {
   create,
   update,
   deleteById,
+  getClasesDeEmpleado,
 };
 
 export default empleadoService;

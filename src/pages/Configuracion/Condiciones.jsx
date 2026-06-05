@@ -1,34 +1,9 @@
 import React from 'react';
-import {
-  Box,
-  Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  IconButton,
-  CircularProgress,
-  Stack,
-  Typography,
-  useMediaQuery,
-  useTheme,
-  Card,
-  CardContent,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-} from '@mui/material';
-import {
-  Add as AddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-} from '@mui/icons-material';
+import { Plus, Edit, Trash2 } from 'lucide-react';
 import * as condicionService from '../../services/condicionService';
 import CondicionForm from '../../components/Forms/CondicionForm';
+import ConfirmDeleteDialog from '../../components/Dialogs/ConfirmDeleteDialog';
+import { Button, Modal, Spinner, Table, TableHead, TableBody, TableRow, TableHeadCell, TableCell, Chip, Card } from '../../components/ui';
 
 function Condiciones() {
   const [condiciones, setCondiciones] = React.useState([]);
@@ -36,18 +11,23 @@ function Condiciones() {
   const [openModal, setOpenModal] = React.useState(false);
   const [editingItem, setEditingItem] = React.useState(null);
   const [deleteDialog, setDeleteDialog] = React.useState({ open: false, item: null });
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const [isMobile, setIsMobile] = React.useState(false);
 
   React.useEffect(() => {
-    loadCondiciones();
+    const checkMobile = () => setIsMobile(window.innerWidth < 640);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  React.useEffect(() => { loadCondiciones(); }, []);
 
   const loadCondiciones = async () => {
     setLoading(true);
     try {
-      const data = await condicionService.getAll();
-      setCondiciones(Array.isArray(data) ? data : []);
+      const data = await condicionService.getAll({ limit: 100 });
+      const condicionesData = data?.data?.data || data?.data || data || [];
+      setCondiciones(Array.isArray(condicionesData) ? condicionesData : []);
     } catch (error) {
       console.error('Error al cargar condiciones:', error);
       setCondiciones([]);
@@ -56,25 +36,11 @@ function Condiciones() {
     }
   };
 
-  const handleOpenModal = (item = null) => {
-    setEditingItem(item);
-    setOpenModal(true);
-  };
-
-  const handleCloseModal = () => {
-    setOpenModal(false);
-    setEditingItem(null);
-  };
-
-  const handleSuccess = () => {
-    handleCloseModal();
-    loadCondiciones();
-  };
-
-  const handleDeleteClick = (item) => {
-    setDeleteDialog({ open: true, item });
-  };
-
+  const handleOpenModal = (item = null) => { setEditingItem(item); setOpenModal(true); };
+  const handleCloseModal = () => { setOpenModal(false); setEditingItem(null); };
+  const handleSuccess = () => { handleCloseModal(); loadCondiciones(); };
+  const handleDeleteClick = (item) => setDeleteDialog({ open: true, item });
+  const handleDeleteCancel = () => setDeleteDialog({ open: false, item: null });
   const handleDeleteConfirm = async () => {
     if (deleteDialog.item) {
       try {
@@ -82,171 +48,67 @@ function Condiciones() {
         setDeleteDialog({ open: false, item: null });
         loadCondiciones();
       } catch (error) {
-        console.error('Error al eliminar condición:', error);
-        alert('Error al eliminar la condición. Por favor, intente nuevamente.');
+        alert('Error al eliminar la condición.');
       }
     }
   };
 
-  const handleDeleteCancel = () => {
-    setDeleteDialog({ open: false, item: null });
-  };
-
   return (
-    <Box>
-      <Box
-        sx={{
-          mb: 3,
-          display: 'flex',
-          justifyContent: 'flex-end',
-        }}
-      >
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => handleOpenModal()}>
-          Nueva Condición
-        </Button>
-      </Box>
-
+    <div>
+      <div className="flex justify-end mb-4">
+        <Button variant="primary" icon={Plus} onClick={() => handleOpenModal()}>Nueva Condición</Button>
+      </div>
       {loading ? (
-        <Box display="flex" justifyContent="center" p={4}>
-          <CircularProgress />
-        </Box>
+        <div className="flex justify-center p-8"><Spinner size="lg" /></div>
       ) : isMobile ? (
-        <Stack spacing={2}>
-          {condiciones.length === 0 ? (
-            <Typography variant="body1" color="text.secondary" textAlign="center" p={4}>
-              No hay condiciones registradas
-            </Typography>
-          ) : (
-            condiciones.map((condicion) => (
-              <Card key={condicion.id_condicion}>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom>
-                    {condicion.condicion}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Atención: {condicion.atencion}
-                  </Typography>
-                  {condicion.descripcion && (
-                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                      {condicion.descripcion}
-                    </Typography>
-                  )}
-                  <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
-                    <IconButton
-                      size="small"
-                      color="primary"
-                      onClick={() => handleOpenModal(condicion)}
-                    >
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton
-                      size="small"
-                      color="error"
-                      onClick={() => handleDeleteClick(condicion)}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </Box>
-                </CardContent>
-              </Card>
-            ))
-          )}
-        </Stack>
+        <div className="space-y-3">
+          {condiciones.map((item) => (
+            <Card key={item.id_condicion} hover>
+              <div className="space-y-2">
+                <h3 className="font-semibold text-text-primary">{item.condicion}</h3>
+                <p className="text-sm text-text-secondary">{item.descripcion || 'Sin descripción'}</p>
+                <p className="text-sm text-text-secondary">Atención: {item.atencion || '-'}</p>
+                <div className="flex gap-2 mt-2">
+                  <Button size="sm" icon={Edit} onClick={() => handleOpenModal(item)}>Editar</Button>
+                  <Button size="sm" variant="danger" icon={Trash2} onClick={() => handleDeleteClick(item)}>Eliminar</Button>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
       ) : (
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>ID</TableCell>
-                <TableCell>Condición</TableCell>
-                <TableCell>Atención</TableCell>
-                <TableCell>Descripción</TableCell>
-                <TableCell align="right">Acciones</TableCell>
+        <Table>
+          <TableHead>
+<TableRow>
+            <TableHeadCell>Nombre</TableHeadCell>
+            <TableHeadCell>Descripción</TableHeadCell>
+            <TableHeadCell>Atención</TableHeadCell>
+            <TableHeadCell className="text-right">Acciones</TableHeadCell>
+          </TableRow>
+          </TableHead>
+          <TableBody>
+            {condiciones.map((item) => (
+              <TableRow key={item.id_condicion} hover>
+                <TableCell className="font-medium">{item.condicion}</TableCell>
+                <TableCell>{item.descripcion || '-'}</TableCell>
+                <TableCell>{item.atencion || '-'}</TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end gap-1">
+                    <button onClick={() => handleOpenModal(item)} className="p-1.5 rounded-lg hover:bg-primary-main/10 text-primary-main"><Edit className="w-4 h-4" /></button>
+                    <button onClick={() => handleDeleteClick(item)} className="p-1.5 rounded-lg hover:bg-red-100 text-red-600"><Trash2 className="w-4 h-4" /></button>
+                  </div>
+                </TableCell>
               </TableRow>
-            </TableHead>
-            <TableBody>
-              {condiciones.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} align="center">
-                    <Typography variant="body1" color="text.secondary" p={2}>
-                      No hay condiciones registradas
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                condiciones.map((condicion) => (
-                  <TableRow key={condicion.id_condicion} hover>
-                    <TableCell>{condicion.id_condicion}</TableCell>
-                    <TableCell>{condicion.condicion}</TableCell>
-                    <TableCell>{condicion.atencion}</TableCell>
-                    <TableCell>{condicion.descripcion || '-'}</TableCell>
-                    <TableCell align="right">
-                      <Stack direction="row" spacing={1} justifyContent="flex-end">
-                        <IconButton
-                          size="small"
-                          color="primary"
-                          onClick={() => handleOpenModal(condicion)}
-                        >
-                          <EditIcon />
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          color="error"
-                          onClick={() => handleDeleteClick(condicion)}
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </Stack>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+            ))}
+          </TableBody>
+        </Table>
       )}
-
-      {/* Modal para crear/editar condición */}
-      <Dialog
-        open={openModal}
-        onClose={handleCloseModal}
-        maxWidth="sm"
-        fullWidth
-        fullScreen={isMobile}
-      >
-        <DialogTitle>
-          {editingItem ? 'Editar Condición' : 'Nueva Condición'}
-        </DialogTitle>
-        <DialogContent>
-          <Box sx={{ pt: 2 }}>
-            <CondicionForm
-              onSuccess={handleSuccess}
-              onCancel={handleCloseModal}
-              initialData={editingItem}
-            />
-          </Box>
-        </DialogContent>
-      </Dialog>
-
-      {/* Dialog de confirmación para eliminar */}
-      <Dialog open={deleteDialog.open} onClose={handleDeleteCancel}>
-        <DialogTitle>Confirmar Eliminación</DialogTitle>
-        <DialogContent>
-          <Typography>
-            ¿Está seguro de que desea eliminar la condición "{deleteDialog.item?.condicion}"?
-            Esta acción no se puede deshacer.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleDeleteCancel}>Cancelar</Button>
-          <Button onClick={handleDeleteConfirm} color="error" variant="contained">
-            Eliminar
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Box>
+      <Modal open={openModal} onClose={handleCloseModal} title={editingItem ? 'Editar Condición' : 'Nueva Condición'} size="sm">
+        <CondicionForm onSuccess={handleSuccess} onCancel={handleCloseModal} initialData={editingItem} />
+      </Modal>
+      <ConfirmDeleteDialog open={deleteDialog.open} onClose={handleDeleteCancel} onConfirm={handleDeleteConfirm} title="la condición" itemName={deleteDialog.item?.condicion || ''} />
+    </div>
   );
 }
 
 export default Condiciones;
-

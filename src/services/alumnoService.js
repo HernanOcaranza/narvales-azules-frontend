@@ -65,6 +65,15 @@ export const getById = async (id) => {
  * @param {string|number} id - ID del alumno
  * @returns {Promise} - Datos completos del alumno
  */
+export const getClases = async (id, filtros = {}) => {
+  const { fechaDesde, fechaHasta } = filtros;
+  const params = {};
+  if (fechaDesde) params.fechaDesde = fechaDesde;
+  if (fechaHasta) params.fechaHasta = fechaHasta;
+  const response = await api.get(`${ENDPOINT}/${id}/clases`, { params });
+  return response?.data || response;
+};
+
 export const getCompletoById = async (id) => {
   const response = await api.get(`${ENDPOINT}/${id}/completo`);
   // Si la respuesta tiene un campo 'data', extraerlo, sino devolver la respuesta completa
@@ -106,6 +115,7 @@ const alumnoService = {
   searchByNombre,
   getById,
   getCompletoById,
+  getClases,
   create,
   update,
   deleteById,
