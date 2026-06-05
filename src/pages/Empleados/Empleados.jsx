@@ -1,36 +1,10 @@
 import React from 'react';
-import {
-  Box,
-  Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  IconButton,
-  CircularProgress,
-  Stack,
-  Typography,
-  Chip,
-  useMediaQuery,
-  useTheme,
-  Card,
-  CardContent,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-} from '@mui/material';
-import {
-  Add as AddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-} from '@mui/icons-material';
+import { Plus, Edit, Trash2 } from 'lucide-react';
 import * as empleadoService from '../../services/empleadoService';
 import EmpleadoForm from '../../components/Forms/EmpleadoForm';
 import ConfirmDeleteDialog from '../../components/Dialogs/ConfirmDeleteDialog';
 import { formatDate } from '../../utils/helpers';
+import { Button, Modal, Spinner, Table, TableHead, TableBody, TableRow, TableHeadCell, TableCell, Chip, Card } from '../../components/ui';
 
 function Empleados() {
   const [empleados, setEmpleados] = React.useState([]);
@@ -38,8 +12,14 @@ function Empleados() {
   const [openModal, setOpenModal] = React.useState(false);
   const [editingItem, setEditingItem] = React.useState(null);
   const [deleteDialog, setDeleteDialog] = React.useState({ open: false, item: null });
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const [isMobile, setIsMobile] = React.useState(false);
+
+  React.useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 640);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   React.useEffect(() => {
     loadEmpleados();
@@ -48,9 +28,9 @@ function Empleados() {
   const loadEmpleados = async () => {
     setLoading(true);
     try {
-      const data = await empleadoService.getAll();
-      // Asegurar que siempre sea un array
-      setEmpleados(Array.isArray(data) ? data : []);
+      const data = await empleadoService.getAll({ limit: 100 });
+      const empleadosData = data?.data?.data || data?.data || data || [];
+      setEmpleados(Array.isArray(empleadosData) ? empleadosData : []);
     } catch (error) {
       console.error('Error al cargar empleados:', error);
       setEmpleados([]);
@@ -71,11 +51,15 @@ function Empleados() {
 
   const handleSuccess = () => {
     handleCloseModal();
-    loadEmpleados(); // Recargar la lista después de crear/editar
+    loadEmpleados();
   };
 
   const handleDeleteClick = (item) => {
     setDeleteDialog({ open: true, item });
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteDialog({ open: false, item: null });
   };
 
   const handleDeleteConfirm = async () => {
@@ -86,183 +70,131 @@ function Empleados() {
         loadEmpleados();
       } catch (error) {
         console.error('Error al eliminar empleado:', error);
-        alert('Error al eliminar el empleado. Por favor, intente nuevamente.');
+        alert('Error al eliminar el empleado.');
       }
     }
   };
 
-  const handleDeleteCancel = () => {
-    setDeleteDialog({ open: false, item: null });
-  };
-
-  const getEstadoColor = (estado) => {
-    return estado === 1 ? 'success' : 'default';
-  };
-
-  const getEstadoLabel = (estado) => {
-    return estado === 1 ? 'Activo' : 'Inactivo';
-  };
-
-  const getTipoLabel = (tipo) => {
+  const getTipoBadge = (tipo) => {
     const tipos = {
-      admin: 'Administrador',
-      profesor: 'Profesor',
-      recepcionista: 'Recepcionista',
+      admin: { variant: 'primary', label: 'Administrador' },
+      recepcionista: { variant: 'info', label: 'Recepcionista' },
+      profesor: { variant: 'success', label: 'Profesor' },
     };
-    return tipos[tipo] || tipo;
+    return tipos[tipo] || { variant: 'default', label: tipo };
   };
 
   return (
-    <Box>
-      <Box
-        sx={{
-          mb: 3,
-          display: 'flex',
-          justifyContent: 'flex-end',
-        }}
-      >
-        <Button variant="contained" startIcon={<AddIcon />} onClick={handleOpenModal}>
-          Crear Nuevo Empleado
+    <div>
+      <div className="flex justify-end mb-4">
+        <Button variant="primary" icon={Plus} onClick={() => handleOpenModal()}>
+          Nuevo Empleado
         </Button>
-      </Box>
+      </div>
 
       {loading ? (
-        <Box display="flex" justifyContent="center" p={4}>
-          <CircularProgress />
-        </Box>
+        <div className="flex justify-center p-8">
+          <Spinner size="lg" />
+        </div>
       ) : isMobile ? (
-        <Stack spacing={2}>
+        <div className="space-y-3">
           {empleados.length === 0 ? (
-            <Typography variant="body1" color="text.secondary" textAlign="center" p={4}>
-              No hay empleados registrados
-            </Typography>
+            <p className="text-center text-text-secondary p-8">No hay empleados registrados</p>
           ) : (
-            empleados.map((empleado) => (
-              <Card key={empleado.id_empleado}>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom>
-                    {empleado.nombre} {empleado.apellido}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Usuario: {empleado.usuario}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Tipo: {getTipoLabel(empleado.tipo)}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    DNI: {empleado.dni || 'N/A'}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Teléfono: {empleado.telefono}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Fecha Alta: {formatDate(empleado.fecha_alta)}
-                  </Typography>
-                  <Box sx={{ mt: 1, mb: 1 }}>
-                    <Chip
-                      label={getEstadoLabel(empleado.estado)}
-                      color={getEstadoColor(empleado.estado)}
-                      size="small"
-                    />
-                  </Box>
-                  <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
-                    <IconButton size="small" color="primary" onClick={() => handleOpenModal(empleado)}>
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton size="small" color="error" onClick={() => handleDeleteClick(empleado)}>
-                      <DeleteIcon />
-                    </IconButton>
-                  </Box>
-                </CardContent>
-              </Card>
-            ))
+            empleados.map((empleado) => {
+              const tipoBadge = getTipoBadge(empleado.tipo);
+              return (
+                <Card key={empleado.id_empleado} hover>
+                  <div className="space-y-2">
+                    <h3 className="font-semibold text-text-primary">
+                      {empleado.nombre} {empleado.apellido}
+                    </h3>
+                    <p className="text-sm text-text-secondary">Usuario: {empleado.usuario || 'N/A'}</p>
+                    <p className="text-sm text-text-secondary">DNI: {empleado.dni || 'N/A'}</p>
+                    <p className="text-sm text-text-secondary">Email: {empleado.email || 'N/A'}</p>
+                    <p className="text-sm text-text-secondary">Teléfono: {empleado.telefono || 'N/A'}</p>
+                    <p className="text-sm text-text-secondary">Alta: {empleado.fecha_alta || 'N/A'}</p>
+                    <div className="flex gap-2 mt-2">
+                      <Chip label={tipoBadge.label} variant={tipoBadge.variant} size="sm" />
+                    </div>
+                    <div className="flex gap-2 mt-2">
+                      <Button size="sm" icon={Edit} onClick={() => handleOpenModal(empleado)}>Editar</Button>
+                      <Button size="sm" variant="danger" icon={Trash2} onClick={() => handleDeleteClick(empleado)}>Eliminar</Button>
+                    </div>
+                  </div>
+                </Card>
+              );
+            })
           )}
-        </Stack>
+        </div>
       ) : (
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
+        <Table>
+          <TableHead>
+<TableRow>
+            <TableHeadCell>Nombre</TableHeadCell>
+            <TableHeadCell>Usuario</TableHeadCell>
+            <TableHeadCell>DNI</TableHeadCell>
+            <TableHeadCell>Email</TableHeadCell>
+            <TableHeadCell>Teléfono</TableHeadCell>
+            <TableHeadCell>Tipo</TableHeadCell>
+            <TableHeadCell>Fecha Alta</TableHeadCell>
+            <TableHeadCell className="text-right">Acciones</TableHeadCell>
+          </TableRow>
+          </TableHead>
+          <TableBody>
+            {empleados.length === 0 ? (
               <TableRow>
-                <TableCell>ID</TableCell>
-                <TableCell>Nombre</TableCell>
-                <TableCell>Apellido</TableCell>
-                <TableCell>Usuario</TableCell>
-                <TableCell>Tipo</TableCell>
-                <TableCell>DNI</TableCell>
-                <TableCell>Teléfono</TableCell>
-                <TableCell>Fecha Alta</TableCell>
-                <TableCell>Estado</TableCell>
-                <TableCell align="right">Acciones</TableCell>
+                <TableCell colSpan={7} className="text-center">
+                  No hay empleados registrados
+                </TableCell>
               </TableRow>
-            </TableHead>
-            <TableBody>
-              {empleados.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={10} align="center">
-                    <Typography variant="body1" color="text.secondary" p={2}>
-                      No hay empleados registrados
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                empleados.map((empleado) => (
+            ) : (
+              empleados.map((empleado) => {
+                const tipoBadge = getTipoBadge(empleado.tipo);
+                return (
                   <TableRow key={empleado.id_empleado} hover>
-                    <TableCell>{empleado.id_empleado}</TableCell>
-                    <TableCell>{empleado.nombre}</TableCell>
-                    <TableCell>{empleado.apellido}</TableCell>
-                    <TableCell>{empleado.usuario}</TableCell>
-                    <TableCell>{getTipoLabel(empleado.tipo)}</TableCell>
-                    <TableCell>{empleado.dni || 'N/A'}</TableCell>
-                    <TableCell>{empleado.telefono}</TableCell>
-                    <TableCell>{formatDate(empleado.fecha_alta)}</TableCell>
+                    <TableCell className="font-medium">{empleado.nombre} {empleado.apellido}</TableCell>
+                    <TableCell>{empleado.usuario || '-'}</TableCell>
+                    <TableCell>{empleado.dni || '-'}</TableCell>
+                    <TableCell>{empleado.email || '-'}</TableCell>
+                    <TableCell>{empleado.telefono || '-'}</TableCell>
                     <TableCell>
-                      <Chip
-                        label={getEstadoLabel(empleado.estado)}
-                        color={getEstadoColor(empleado.estado)}
-                        size="small"
-                      />
+                      <Chip label={tipoBadge.label} variant={tipoBadge.variant} size="sm" />
                     </TableCell>
-                    <TableCell align="right">
-                      <Stack direction="row" spacing={1} justifyContent="flex-end">
-                        <IconButton size="small" color="primary" onClick={() => handleOpenModal(empleado)}>
-                          <EditIcon />
-                        </IconButton>
-                        <IconButton size="small" color="error" onClick={() => handleDeleteClick(empleado)}>
-                          <DeleteIcon />
-                        </IconButton>
-                      </Stack>
+                    <TableCell>{empleado.fecha_alta || '-'}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <button onClick={() => handleOpenModal(empleado)} className="p-1.5 rounded-lg hover:bg-primary-main/10 text-primary-main">
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => handleDeleteClick(empleado)} className="p-1.5 rounded-lg hover:bg-red-100 text-red-600">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+                );
+              })
+            )}
+          </TableBody>
+        </Table>
       )}
 
-      {/* Modal para crear/editar empleado */}
-      <Dialog
+      {/* Modal */}
+      <Modal
         open={openModal}
         onClose={handleCloseModal}
-        maxWidth="sm"
-        fullWidth
-        fullScreen={isMobile}
+        title={editingItem ? 'Editar Empleado' : 'Nuevo Empleado'}
+        size="md"
       >
-        <DialogTitle>
-          {editingItem ? 'Editar Empleado' : 'Crear Nuevo Empleado'}
-        </DialogTitle>
-        <DialogContent>
-          <Box sx={{ pt: 2 }}>
-            <EmpleadoForm
-              onSuccess={handleSuccess}
-              onCancel={handleCloseModal}
-              initialData={editingItem}
-            />
-          </Box>
-        </DialogContent>
-      </Dialog>
+        <EmpleadoForm
+          onSuccess={handleSuccess}
+          onCancel={handleCloseModal}
+          initialData={editingItem}
+        />
+      </Modal>
 
-      {/* Dialog de confirmación para eliminar */}
+      {/* Delete Dialog */}
       <ConfirmDeleteDialog
         open={deleteDialog.open}
         onClose={handleDeleteCancel}
@@ -270,9 +202,8 @@ function Empleados() {
         title="el empleado"
         itemName={deleteDialog.item ? `${deleteDialog.item.nombre} ${deleteDialog.item.apellido}` : ''}
       />
-    </Box>
+    </div>
   );
 }
 
 export default Empleados;
-

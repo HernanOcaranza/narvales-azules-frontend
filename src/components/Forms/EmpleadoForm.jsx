@@ -1,306 +1,79 @@
 import React from 'react';
-import {
-  TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Stack,
-  CircularProgress,
-  Alert,
-  Typography,
-  Button,
-} from '@mui/material';
-import { Save as SaveIcon } from '@mui/icons-material';
+import { Save } from 'lucide-react';
 import * as empleadoService from '../../services/empleadoService';
-import { formatDateForInput, getTodayLocalDate } from '../../utils/helpers';
+import { getTodayLocalDate } from '../../utils/helpers';
+import { Button, Input, Select } from '../../components/ui';
 
 function EmpleadoForm({ onSuccess, onCancel, initialData = null }) {
-
-  // Estados del formulario
-  const [formData, setFormData] = React.useState(() => {
-    if (initialData) {
-      return {
-        ...initialData,
-        fecha_alta: formatDateForInput(initialData.fecha_alta),
-        contrasenia: '', // No mostrar la contraseña al editar
-      };
-    }
-    return {
-      tipo: '',
-      usuario: '',
-      contrasenia: '',
-      nombre: '',
-      apellido: '',
-      dni: '',
-      telefono: '',
-      fecha_alta: getTodayLocalDate(), // Fecha actual por defecto
-      estado: 1,
+  const getInitialData = () => {
+    const defaults = { 
+      tipo: 'recepcionista', 
+      usuario: '', 
+      nombre: '', 
+      apellido: '', 
+      dni: '', 
+      email: '',
+      telefono: '', 
+      fecha_alta: getTodayLocalDate() 
     };
-  });
+    if (!initialData) return defaults;
+    const { contrasenia, ...rest } = initialData;
+    return { ...defaults, ...rest };
+  };
 
-  // Estados de carga y errores
+  const [formData, setFormData] = React.useState(getInitialData);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState('');
-  const [errors, setErrors] = React.useState({});
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: name === 'estado' ? Number(value) : value,
-    }));
-    // Limpiar error del campo cuando el usuario empieza a escribir
-    if (errors[name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: '',
-      }));
-    }
-  };
-
-  const validateForm = () => {
-    const newErrors = {};
-
-    if (!formData.tipo.trim()) {
-      newErrors.tipo = 'El tipo es requerido';
-    }
-
-    if (!formData.usuario.trim()) {
-      newErrors.usuario = 'El usuario es requerido';
-    } else if (formData.usuario.length > 50) {
-      newErrors.usuario = 'El usuario no puede tener más de 50 caracteres';
-    }
-
-    // La contraseña solo es requerida al crear, no al editar
-    const isEditing = initialData && initialData.id_empleado;
-    if (!isEditing && !formData.contrasenia.trim()) {
-      newErrors.contrasenia = 'La contraseña es requerida';
-    }
-
-    if (!formData.nombre.trim()) {
-      newErrors.nombre = 'El nombre es requerido';
-    } else if (formData.nombre.length > 50) {
-      newErrors.nombre = 'El nombre no puede tener más de 50 caracteres';
-    }
-
-    if (!formData.apellido.trim()) {
-      newErrors.apellido = 'El apellido es requerido';
-    } else if (formData.apellido.length > 50) {
-      newErrors.apellido = 'El apellido no puede tener más de 50 caracteres';
-    }
-
-    if (formData.dni && formData.dni.length !== 8) {
-      newErrors.dni = 'El DNI debe tener 8 caracteres';
-    }
-
-    if (!formData.telefono.trim()) {
-      newErrors.telefono = 'El teléfono es requerido';
-    } else if (formData.telefono.length !== 10) {
-      newErrors.telefono = 'El teléfono debe tener 10 caracteres';
-    }
-
-    if (!formData.fecha_alta) {
-      newErrors.fecha_alta = 'La fecha de alta es requerida';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+  const handleChange = (e) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-
-    if (!validateForm()) {
+    if (!formData.nombre || !formData.apellido || !formData.tipo || !formData.usuario) { 
+      setError('Nombre, apellido, tipo y usuario son requeridos'); 
+      return; 
+    }
+    if (!initialData?.id_empleado && !formData.contrasenia) {
+      setError('La contraseña es requerida para nuevos empleados');
       return;
     }
-
     setLoading(true);
     try {
-      const isEditing = initialData && initialData.id_empleado;
-      let dataToSend = { ...formData };
-      
-      // Si estamos editando y no hay contraseña, no enviarla
-      if (isEditing && !formData.contrasenia.trim()) {
-        delete dataToSend.contrasenia;
+      const payload = { ...formData };
+      if (payload.contrasenia === '') {
+        delete payload.contrasenia;
       }
-      
-      if (isEditing) {
-        await empleadoService.update(initialData.id_empleado, dataToSend);
-      } else {
-        await empleadoService.create(dataToSend);
-      }
-      if (onSuccess) {
-        onSuccess();
-      }
-    } catch (error) {
-      console.error('Error al guardar empleado:', error);
-      setError(
-        error.response?.data?.message ||
-          'Error al guardar el empleado. Por favor, intente nuevamente.'
-      );
-    } finally {
-      setLoading(false);
-    }
+      initialData?.id_empleado ? await empleadoService.update(initialData.id_empleado, payload) : await empleadoService.create(payload);
+      onSuccess();
+    } catch (err) { setError(err.message || 'Error al guardar'); } 
+    finally { setLoading(false); }
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <Stack spacing={3}>
-        {error && (
-          <Alert severity="error" onClose={() => setError('')}>
-            {error}
-          </Alert>
-        )}
-
-        {/* Tipo */}
-        <FormControl fullWidth required error={!!errors.tipo}>
-          <InputLabel>Tipo</InputLabel>
-          <Select
-            name="tipo"
-            value={formData.tipo}
-            onChange={handleChange}
-            label="Tipo"
-          >
-            <MenuItem value="admin">Administrador</MenuItem>
-            <MenuItem value="profesor">Profesor</MenuItem>
-            <MenuItem value="recepcionista">Recepcionista</MenuItem>
-          </Select>
-          {errors.tipo && (
-            <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.75 }}>
-              {errors.tipo}
-            </Typography>
-          )}
-        </FormControl>
-
-        {/* Usuario */}
-        <TextField
-          label="Usuario"
-          name="usuario"
-          value={formData.usuario}
-          onChange={handleChange}
-          required
-          fullWidth
-          error={!!errors.usuario}
-          helperText={errors.usuario}
-          inputProps={{ maxLength: 50 }}
-        />
-
-        {/* Contraseña */}
-        <TextField
-          label="Contraseña"
-          name="contrasenia"
-          type="password"
-          value={formData.contrasenia}
-          onChange={handleChange}
-          required={!initialData || !initialData.id_empleado}
-          fullWidth
-          error={!!errors.contrasenia}
-          helperText={errors.contrasenia || (initialData && initialData.id_empleado ? 'Dejar vacío para mantener la contraseña actual' : '')}
-        />
-
-        {/* Nombre */}
-        <TextField
-          label="Nombre"
-          name="nombre"
-          value={formData.nombre}
-          onChange={handleChange}
-          required
-          fullWidth
-          error={!!errors.nombre}
-          helperText={errors.nombre}
-          inputProps={{ maxLength: 50 }}
-        />
-
-        {/* Apellido */}
-        <TextField
-          label="Apellido"
-          name="apellido"
-          value={formData.apellido}
-          onChange={handleChange}
-          required
-          fullWidth
-          error={!!errors.apellido}
-          helperText={errors.apellido}
-          inputProps={{ maxLength: 50 }}
-        />
-
-        {/* DNI */}
-        <TextField
-          label="DNI"
-          name="dni"
-          value={formData.dni}
-          onChange={handleChange}
-          fullWidth
-          error={!!errors.dni}
-          helperText={errors.dni || 'Opcional - 8 caracteres'}
-          inputProps={{ maxLength: 8 }}
-        />
-
-        {/* Teléfono */}
-        <TextField
-          label="Teléfono"
-          name="telefono"
-          value={formData.telefono}
-          onChange={handleChange}
-          required
-          fullWidth
-          error={!!errors.telefono}
-          helperText={errors.telefono || '10 caracteres'}
-          inputProps={{ maxLength: 10 }}
-        />
-
-        {/* Fecha de Alta */}
-        <TextField
-          label="Fecha de Alta"
-          name="fecha_alta"
-          type="date"
-          value={formData.fecha_alta}
-          onChange={handleChange}
-          required
-          fullWidth
-          error={!!errors.fecha_alta}
-          helperText={errors.fecha_alta}
-          InputLabelProps={{
-            shrink: true,
-          }}
-        />
-
-        {/* Estado */}
-        <FormControl fullWidth>
-          <InputLabel>Estado</InputLabel>
-          <Select
-            name="estado"
-            value={formData.estado}
-            onChange={handleChange}
-            label="Estado"
-          >
-            <MenuItem value={1}>Activo</MenuItem>
-            <MenuItem value={0}>Inactivo</MenuItem>
-          </Select>
-        </FormControl>
-
-        {/* Botones */}
-        <Stack direction="row" spacing={2} sx={{ pt: 2, justifyContent: 'flex-end' }}>
-          {onCancel && (
-            <Button variant="outlined" onClick={onCancel} disabled={loading}>
-              Cancelar
-            </Button>
-          )}
-          <Button
-            type="submit"
-            variant="contained"
-            startIcon={loading ? <CircularProgress size={20} /> : <SaveIcon />}
-            disabled={loading}
-          >
-            {loading ? 'Guardando...' : 'Guardar'}
-          </Button>
-        </Stack>
-      </Stack>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {error && <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700">{error}</div>}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Input label="Usuario" name="usuario" value={formData.usuario} onChange={handleChange} required autoFocus helperText="Nombre de usuario para iniciar sesión" />
+        <Input label="Contraseña" name="contrasenia" type="password" value={formData.contrasenia || ''} onChange={handleChange} helperText={initialData ? 'Dejar en blanco para mantener actual' : 'Requerida'} />
+        <Input label="Nombre" name="nombre" value={formData.nombre} onChange={handleChange} required />
+        <Input label="Apellido" name="apellido" value={formData.apellido} onChange={handleChange} required />
+        <Input label="DNI" name="dni" value={formData.dni} onChange={handleChange} />
+        <Input label="Email" name="email" type="email" value={formData.email || ''} onChange={handleChange} />
+        <Input label="Teléfono" name="telefono" value={formData.telefono} onChange={handleChange} required />
+      </div>
+      <Select label="Tipo" name="tipo" value={formData.tipo || 'recepcionista'} onChange={handleChange}>
+        <option value="admin">Administrador</option>
+        <option value="recepcionista">Recepcionista</option>
+        <option value="profesor">Profesor</option>
+        <option value="guardavidas">Guardavidas</option>
+      </Select>
+      <Input label="Fecha de Alta" type="date" name="fecha_alta" value={formData.fecha_alta} onChange={handleChange} />
+      <div className="flex justify-end gap-3 pt-4">
+        {onCancel && <Button type="button" variant="outline" onClick={onCancel}>Cancelar</Button>}
+        <Button type="submit" variant="primary" icon={Save} loading={loading}>Guardar</Button>
+      </div>
     </form>
   );
 }
 
 export default EmpleadoForm;
-

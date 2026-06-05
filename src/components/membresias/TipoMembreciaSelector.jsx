@@ -1,105 +1,53 @@
 import React from 'react';
-import {
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Alert,
-  CircularProgress,
-  Box,
-  Typography,
-} from '@mui/material';
 import { useTipoMembresias } from '../../hooks/useTipoMembresias';
 import { formatCurrency, formatDate } from '../../utils/helpers';
+import { Select, Spinner } from '../ui';
 
-function TipoMembreciaSelector({ value, onChange, error, required = true }) {
+export default function TipoMembreciaSelector({ value, onChange, error, required = true }) {
   const { tipos, loading, fetchTipos, getPrecioVigente } = useTipoMembresias();
   const [precioVigente, setPrecioVigente] = React.useState(null);
   const [loadingPrecio, setLoadingPrecio] = React.useState(false);
 
-  React.useEffect(() => {
-    fetchTipos();
-  }, [fetchTipos]);
+  React.useEffect(() => { fetchTipos(); }, [fetchTipos]);
 
   React.useEffect(() => {
     if (value) {
-      loadPrecioVigente(value);
+      setLoadingPrecio(true);
+      getPrecioVigente(value).then(setPrecioVigente).catch(() => setPrecioVigente(null)).finally(() => setLoadingPrecio(false));
     } else {
       setPrecioVigente(null);
     }
   }, [value]);
 
-  const loadPrecioVigente = async (idTipoMembrecia) => {
-    setLoadingPrecio(true);
-    try {
-      const precio = await getPrecioVigente(idTipoMembrecia);
-      setPrecioVigente(precio);
-    } catch (err) {
-      console.error('Error al cargar precio vigente:', err);
-      setPrecioVigente(null);
-    } finally {
-      setLoadingPrecio(false);
-    }
-  };
-
-  const handleChange = (e) => {
-    const newValue = e.target.value;
-    onChange(newValue);
-  };
-
   return (
-    <Box>
-      <FormControl fullWidth required={required} error={!!error}>
-        <InputLabel>Tipo de Membresía</InputLabel>
-        <Select value={value || ''} label="Tipo de Membresía" onChange={handleChange}>
-          <MenuItem value="">Seleccione un tipo</MenuItem>
-          {loading ? (
-            <MenuItem disabled>
-              <CircularProgress size={20} />
-            </MenuItem>
-          ) : (
-            tipos.map((tipo) => (
-              <MenuItem key={tipo.id_tipo_membrecia} value={tipo.id_tipo_membrecia}>
-                {tipo.tipo_membrecia || `Tipo ${tipo.id_tipo_membrecia}`}
-              </MenuItem>
-            ))
-          )}
-        </Select>
-        {error && (
-          <Alert severity="error" sx={{ mt: 1 }}>
-            {error}
-          </Alert>
-        )}
-      </FormControl>
-
+    <div>
+      <select
+        value={value || ''}
+        onChange={(e) => onChange(e.target.value)}
+        className={`w-full px-3 py-2 rounded-lg border ${error ? 'border-red-500' : 'border-gray-300'} focus:border-primary-main focus:ring-2 focus:ring-primary-light/30 outline-none`}
+        required={required}
+      >
+        <option value="">Seleccione un tipo</option>
+        {loading ? <option disabled>Cargando...</option> : tipos.map((tipo) => (
+          <option key={tipo.id_tipo_membrecia} value={tipo.id_tipo_membrecia}>{tipo.tipo_membrecia || `Tipo ${tipo.id_tipo_membrecia}`}</option>
+        ))}
+      </select>
+      {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
+      
       {value && (
-        <Box sx={{ mt: 2 }}>
+        <div className="mt-2">
           {loadingPrecio ? (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <CircularProgress size={16} />
-              <Typography variant="body2" color="text.secondary">
-                Cargando precio...
-              </Typography>
-            </Box>
+            <div className="flex items-center gap-2 text-text-secondary text-sm"><Spinner size="sm" /> Cargando precio...</div>
           ) : precioVigente ? (
-            <Alert severity="info" icon={false}>
-              <Typography variant="body2">
-                <strong>Precio vigente:</strong> {formatCurrency(precioVigente.precio || precioVigente.monto || 0)}
-                {(precioVigente.fecha_inicio_vigencia || precioVigente.fecha_inicio) && (
-                  <span> (Vigente desde {formatDate(precioVigente.fecha_inicio_vigencia || precioVigente.fecha_inicio)})</span>
-                )}
-              </Typography>
-            </Alert>
+            <div className="p-2 bg-blue-50 border border-blue-200 rounded-lg text-sm">
+              <strong>Precio vigente:</strong> {formatCurrency(precioVigente.precio || precioVigente.monto || 0)}
+              {(precioVigente.fecha_inicio_vigencia || precioVigente.fecha_inicio) && <span> (Vigente desde {formatDate(precioVigente.fecha_inicio_vigencia || precioVigente.fecha_inicio)})</span>}
+            </div>
           ) : (
-            <Alert severity="warning" icon={false}>
-              <Typography variant="body2">No hay precio vigente para este tipo de membresía</Typography>
-            </Alert>
+            <div className="p-2 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">No hay precio vigente para este tipo de membresía</div>
           )}
-        </Box>
+        </div>
       )}
-    </Box>
+    </div>
   );
 }
-
-export default TipoMembreciaSelector;
-

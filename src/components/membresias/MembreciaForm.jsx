@@ -1,35 +1,17 @@
 import React from 'react';
-import {
-  TextField,
-  Stack,
-  CircularProgress,
-  Alert,
-  Button,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Autocomplete,
-  Divider,
-  Typography,
-  Box,
-} from '@mui/material';
-import { Save as SaveIcon } from '@mui/icons-material';
-import * as alumnoService from '../../services/alumnoService';
+import { Save } from 'lucide-react';
 import * as grupoService from '../../services/grupoService';
+import * as alumnoService from '../../services/alumnoService';
 import TipoMembreciaSelector from './TipoMembreciaSelector';
 import DetallesPagoManager from './DetallesPagoManager';
-import { validateMembrecia, validateDetallePago } from '../../utils/validators';
 import { formatDateForInput, getTodayLocalDate } from '../../utils/helpers';
+import { Button, Input, Select } from '../ui';
 
-function MembreciaForm({ onSuccess, onCancel, initialData = null }) {
-
+export default function MembreciaForm({ onSuccess, onCancel, initialData = null }) {
   const [formData, setFormData] = React.useState(() => {
     if (initialData) {
-      // Asegurarse de que los detalles de pago incluyan sus IDs si existen
       const detallesPago = (initialData.pago?.detalles || []).map(detalle => ({
         ...detalle,
-        // Preservar el ID si existe para poder actualizarlo
         id_detalle_pago: detalle.id_detalle_pago || undefined,
       }));
       
@@ -44,7 +26,7 @@ function MembreciaForm({ onSuccess, onCancel, initialData = null }) {
     return {
       id_alumno: null,
       id_tipo_membrecia: null,
-      id_grupo: null,
+      id_grupo: '',
       fecha_inicio: getTodayLocalDate(),
       estado: 'activa',
       detallesPago: [],
@@ -52,25 +34,6 @@ function MembreciaForm({ onSuccess, onCancel, initialData = null }) {
       observaciones_pago: '',
     };
   });
-
-  // Actualizar formData cuando cambia initialData (útil cuando se carga la membresía completa)
-  React.useEffect(() => {
-    if (initialData) {
-      const detallesPago = (initialData.pago?.detalles || []).map(detalle => ({
-        ...detalle,
-        id_detalle_pago: detalle.id_detalle_pago || undefined,
-      }));
-      
-      setFormData(prev => ({
-        ...prev,
-        ...initialData,
-        fecha_inicio: formatDateForInput(initialData.fecha_inicio),
-        detallesPago: detallesPago,
-        fecha_pago: formatDateForInput(initialData.pago?.fecha_pago) || prev.fecha_pago,
-        observaciones_pago: initialData.pago?.observaciones || prev.observaciones_pago,
-      }));
-    }
-  }, [initialData]);
 
   const [alumnos, setAlumnos] = React.useState([]);
   const [grupos, setGrupos] = React.useState([]);
@@ -90,7 +53,6 @@ function MembreciaForm({ onSuccess, onCancel, initialData = null }) {
   }, [initialData]);
 
   React.useEffect(() => {
-    // Si hay un alumno seleccionado, asegurar que esté en la lista y el texto coincida
     if (formData.id_alumno) {
       const alumnoSeleccionado = alumnos.find(a => a.id_alumno === formData.id_alumno);
       if (alumnoSeleccionado) {
@@ -98,27 +60,25 @@ function MembreciaForm({ onSuccess, onCancel, initialData = null }) {
         if (alumnoSearch !== textoEsperado) {
           setAlumnoSearch(textoEsperado);
         }
-        return; // No buscar si ya está seleccionado
+        return;
       }
     }
 
-    // Buscar solo si hay texto y no hay alumno seleccionado
     if (alumnoSearch && alumnoSearch.length >= 2 && !formData.id_alumno) {
       const timeoutId = setTimeout(() => {
         searchAlumnos();
       }, 300);
       return () => clearTimeout(timeoutId);
     } else if (alumnoSearch.length === 0 && !formData.id_alumno) {
-      // Solo limpiar si no hay alumno seleccionado
       setAlumnos([]);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [alumnoSearch, formData.id_alumno]);
 
   const loadGrupos = async () => {
     try {
-      const data = await grupoService.getAll();
-      setGrupos(Array.isArray(data) ? data : []);
+      const data = await grupoService.getAll({ limit: 100 });
+      const gruposData = data?.data?.data || data?.data || data || [];
+      setGrupos(Array.isArray(gruposData) ? gruposData : []);
     } catch (err) {
       console.error('Error al cargar grupos:', err);
     }
@@ -128,7 +88,8 @@ function MembreciaForm({ onSuccess, onCancel, initialData = null }) {
     setLoadingAlumnos(true);
     try {
       const data = await alumnoService.searchByNombre(alumnoSearch);
-      setAlumnos(Array.isArray(data) ? data : []);
+      const alumnosData = data?.data?.data || data?.data || data || [];
+      setAlumnos(Array.isArray(alumnosData) ? alumnosData : []);
     } catch (err) {
       console.error('Error al buscar alumnos:', err);
       setAlumnos([]);
@@ -138,12 +99,12 @@ function MembreciaForm({ onSuccess, onCancel, initialData = null }) {
   };
 
   const handleChange = (field, value) => {
-    setFormData((prev) => ({
+    setFormData(prev => ({
       ...prev,
       [field]: value,
     }));
     if (errors[field]) {
-      setErrors((prev) => ({
+      setErrors(prev => ({
         ...prev,
         [field]: '',
       }));
@@ -154,74 +115,48 @@ function MembreciaForm({ onSuccess, onCancel, initialData = null }) {
     e.preventDefault();
     setError('');
 
-    // Validar datos de membresía (sin pago)
-    // fecha_fin se calcula automáticamente en el backend
-    // No enviamos fecha_fin para que el backend la calcule automáticamente
-    const membresiaData = {
-      id_alumno: formData.id_alumno,
-      id_tipo_membrecia: formData.id_tipo_membrecia,
-      id_grupo: formData.id_grupo,
-      fecha_inicio: formData.fecha_inicio,
-      // fecha_fin no se envía - el backend la calculará automáticamente basándose en duracion_dias
-      estado: formData.estado,
-    };
-
-    const validationErrors = validateMembrecia(membresiaData);
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
+    if (!formData.id_alumno) {
+      setErrors({ id_alumno: 'El alumno es requerido' });
+      return;
+    }
+    if (!formData.id_tipo_membrecia) {
+      setErrors({ id_tipo_membrecia: 'El tipo de membresía es requerido' });
       return;
     }
 
-    // Validar detalles de pago si existen
+    const membresiaData = {
+      id_alumno: formData.id_alumno,
+      id_tipo_membrecia: formData.id_tipo_membrecia,
+      id_grupo: formData.id_grupo || null,
+      fecha_inicio: formData.fecha_inicio,
+      estado: formData.estado,
+    };
+
+    const requestData = { ...membresiaData };
+
     if (formData.detallesPago && formData.detallesPago.length > 0) {
-      const detallesErrors = {};
-      formData.detallesPago.forEach((detalle, index) => {
-        const detalleErrors = validateDetallePago(detalle);
-        if (Object.keys(detalleErrors).length > 0) {
-          detallesErrors[`detalle_${index}`] = detalleErrors;
-        }
-      });
-      if (Object.keys(detallesErrors).length > 0) {
-        setErrors({ ...errors, detallesPago: 'Por favor, corrija los errores en los detalles de pago' });
-        return;
-      }
+      requestData.pago = {
+        ...(initialData?.pago?.id_pago ? { id_pago: initialData.pago.id_pago } : {}),
+        fecha_pago: formData.fecha_pago || formData.fecha_inicio,
+        observaciones: formData.observaciones_pago || undefined,
+        detalles: formData.detallesPago.map(detalle => ({
+          ...(detalle.id_detalle_pago ? { id_detalle_pago: detalle.id_detalle_pago } : {}),
+          metodo_pago: detalle.metodo_pago,
+          monto_parcial: Number(detalle.monto_parcial),
+          fecha_detalle: detalle.fecha_detalle,
+          referencia_transferencia: detalle.referencia_transferencia || undefined,
+        })),
+      };
     }
 
     setLoading(true);
     try {
       if (onSuccess) {
-        // Preparar datos según el nuevo formato de API
-        const requestData = {
-          ...membresiaData,
-        };
-
-        // Si hay detalles de pago, incluir el objeto pago
-        if (formData.detallesPago && formData.detallesPago.length > 0) {
-          requestData.pago = {
-            // Si estamos editando y hay un pago previo, incluir su ID
-            ...(initialData?.pago?.id_pago ? { id_pago: initialData.pago.id_pago } : {}),
-            fecha_pago: formData.fecha_pago || formData.fecha_inicio,
-            estado: 'completo', // El estado debe ser: pendiente, parcial, completo, cancelado
-            observaciones: formData.observaciones_pago || undefined,
-            detalles: formData.detallesPago.map(detalle => ({
-              // Incluir el ID si existe para que el backend sepa si es actualización o creación
-              ...(detalle.id_detalle_pago ? { id_detalle_pago: detalle.id_detalle_pago } : {}),
-              metodo_pago: detalle.metodo_pago,
-              monto_parcial: Number(detalle.monto_parcial),
-              fecha_detalle: detalle.fecha_detalle,
-              referencia_transferencia: detalle.referencia_transferencia || undefined,
-            })),
-          };
-        }
-
-        // Log para debugging (puedes eliminarlo después)
-        console.log('Datos del formulario a enviar:', JSON.stringify(requestData, null, 2));
-
         await onSuccess(requestData);
       }
     } catch (err) {
       console.error('Error al guardar membresía:', err);
-      setError(err.message || 'Error al guardar la membresía. Por favor, intente nuevamente.');
+      setError(err.message || 'Error al guardar la membresía');
     } finally {
       setLoading(false);
     }
@@ -229,168 +164,138 @@ function MembreciaForm({ onSuccess, onCancel, initialData = null }) {
 
   const estados = ['activa', 'vencida', 'suspendida', 'cancelada'];
 
+  const selectedAlumno = alumnos.find(a => a.id_alumno === formData.id_alumno);
+
   return (
-    <form onSubmit={handleSubmit}>
-      <Stack spacing={3}>
-        {error && (
-          <Alert severity="error" onClose={() => setError('')}>
-            {error}
-          </Alert>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {error && (
+        <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700">
+          {error}
+        </div>
+      )}
+
+      <div className="relative">
+        <label className="block text-sm font-medium text-text-primary mb-1">
+          Alumno <span className="text-red-500">*</span>
+        </label>
+        <input
+          type="text"
+          className={`w-full px-3 py-2 rounded-lg border ${errors.id_alumno ? 'border-red-500' : 'border-gray-300'} focus:border-primary-main focus:ring-2 focus:ring-primary-light/30 outline-none`}
+          placeholder="Escriba para buscar..."
+          value={alumnoSearch}
+          onChange={(e) => setAlumnoSearch(e.target.value)}
+        />
+        {loadingAlumnos && (
+          <div className="absolute right-3 top-9">
+            <div className="w-4 h-4 border-2 border-primary-main border-t-transparent rounded-full animate-spin"></div>
+          </div>
         )}
-
-        <Autocomplete
-          options={alumnos}
-          getOptionLabel={(option) => `${option.nombre} ${option.apellido}`}
-          loading={loadingAlumnos}
-          inputValue={alumnoSearch}
-          onInputChange={(e, newValue, reason) => {
-            // Solo actualizar si no es porque se seleccionó una opción
-            if (reason !== 'reset') {
-              setAlumnoSearch(newValue);
-            }
-          }}
-          onChange={(e, newValue) => {
-            handleChange('id_alumno', newValue?.id_alumno || null);
-            // Si se deselecciona, limpiar también el texto
-            if (!newValue) {
-              setAlumnoSearch('');
-            }
-          }}
-          value={alumnos.find(a => a.id_alumno === formData.id_alumno) || null}
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              label="Alumno"
-              required
-              error={!!errors.id_alumno}
-              helperText={errors.id_alumno}
-              placeholder="Escriba para buscar..."
-            />
-          )}
-        />
-
-        <TipoMembreciaSelector
-          value={formData.id_tipo_membrecia}
-          onChange={(value) => handleChange('id_tipo_membrecia', value)}
-          error={errors.id_tipo_membrecia}
-        />
-
-        <FormControl fullWidth required error={!!errors.id_grupo}>
-          <InputLabel>Grupo</InputLabel>
-          <Select
-            name="id_grupo"
-            value={formData.id_grupo || ''}
-            onChange={(e) => handleChange('id_grupo', e.target.value)}
-            label="Grupo"
-          >
-            {grupos.map((grupo) => (
-              <MenuItem key={grupo.id_grupo} value={grupo.id_grupo}>
-                {grupo.nombre}
-              </MenuItem>
+        {alumnos.length > 0 && (
+          <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-auto">
+            {alumnos.map(alumno => (
+              <button
+                key={alumno.id_alumno}
+                type="button"
+                className="w-full px-3 py-2 text-left hover:bg-gray-50"
+                onClick={() => {
+                  handleChange('id_alumno', alumno.id_alumno);
+                  setAlumnoSearch(`${alumno.nombre} ${alumno.apellido}`);
+                  setAlumnos([]);
+                }}
+              >
+                {alumno.nombre} {alumno.apellido}
+              </button>
             ))}
-          </Select>
-          {errors.id_grupo && (
-            <Alert severity="error" sx={{ mt: 1 }}>
-              {errors.id_grupo}
-            </Alert>
-          )}
-        </FormControl>
+          </div>
+        )}
+        {errors.id_alumno && (
+          <p className="text-red-500 text-sm mt-1">{errors.id_alumno}</p>
+        )}
+      </div>
 
-        <TextField
-          label="Fecha de Inicio"
-          name="fecha_inicio"
-          type="date"
-          value={formData.fecha_inicio}
-          onChange={(e) => handleChange('fecha_inicio', e.target.value)}
-          required
-          fullWidth
-          error={!!errors.fecha_inicio}
-          helperText={errors.fecha_inicio || 'La fecha de fin se calculará automáticamente según el tipo de membresía'}
-          InputLabelProps={{ shrink: true }}
-        />
+      <TipoMembreciaSelector
+        value={formData.id_tipo_membrecia}
+        onChange={(value) => handleChange('id_tipo_membrecia', value)}
+        error={errors.id_tipo_membrecia}
+      />
 
-        <FormControl fullWidth required error={!!errors.estado}>
-          <InputLabel>Estado</InputLabel>
-          <Select
-            name="estado"
-            value={formData.estado}
-            onChange={(e) => handleChange('estado', e.target.value)}
-            label="Estado"
-          >
-            {estados.map((estado) => (
-              <MenuItem key={estado} value={estado}>
-                {estado.charAt(0).toUpperCase() + estado.slice(1)}
-              </MenuItem>
-            ))}
-          </Select>
-          {errors.estado && (
-            <Alert severity="error" sx={{ mt: 1 }}>
-              {errors.estado}
-            </Alert>
-          )}
-        </FormControl>
+      <div className="flex flex-col gap-1">
+        <label className="text-sm font-medium text-text-primary">Grupo</label>
+        <select
+          className="px-3 py-2 rounded-lg border border-gray-300 focus:border-primary-main focus:ring-2 focus:ring-primary-light/30 outline-none"
+          value={formData.id_grupo || ''}
+          onChange={(e) => handleChange('id_grupo', e.target.value)}
+        >
+          <option value="">Seleccionar grupo</option>
+          {grupos.map(grupo => (
+            <option key={grupo.id_grupo} value={grupo.id_grupo}>
+              {grupo.nombre}
+            </option>
+          ))}
+        </select>
+      </div>
 
-        <Divider sx={{ my: 3 }} />
+      <Input
+        label="Fecha de Inicio"
+        type="date"
+        name="fecha_inicio"
+        value={formData.fecha_inicio}
+        onChange={(e) => handleChange('fecha_inicio', e.target.value)}
+        required
+      />
 
-        {/* Sección de Pago */}
-        <Box>
-          <Typography variant="h6" gutterBottom>
-            Información de Pago (Opcional)
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Puede crear la membresía sin pago y agregarlo después, o agregar los detalles de pago ahora.
-          </Typography>
+      <Select
+        label="Estado"
+        value={formData.estado}
+        onChange={(e) => handleChange('estado', e.target.value)}
+      >
+        {estados.map(estado => (
+          <option key={estado} value={estado}>
+            {estado.charAt(0).toUpperCase() + estado.slice(1)}
+          </option>
+        ))}
+      </Select>
 
-          <Stack spacing={2}>
-            <TextField
-              label="Fecha de Pago"
-              name="fecha_pago"
-              type="date"
-              value={formData.fecha_pago}
-              onChange={(e) => handleChange('fecha_pago', e.target.value)}
-              fullWidth
-              InputLabelProps={{ shrink: true }}
-              helperText="Fecha del pago (solo si se agregan detalles de pago)"
-            />
+      <div className="border-t border-gray-200 pt-4">
+        <p className="font-medium text-text-primary mb-3">Información de Pago (Opcional)</p>
+        
+        <div className="space-y-3">
+          <Input
+            label="Fecha de Pago"
+            type="date"
+            name="fecha_pago"
+            value={formData.fecha_pago}
+            onChange={(e) => handleChange('fecha_pago', e.target.value)}
+          />
 
-            <TextField
-              label="Observaciones del Pago"
-              name="observaciones_pago"
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-text-primary">Observaciones del Pago</label>
+            <textarea
+              className="px-3 py-2 rounded-lg border border-gray-300 focus:border-primary-main focus:ring-2 focus:ring-primary-light/30 outline-none resize-none"
+              rows={2}
               value={formData.observaciones_pago}
               onChange={(e) => handleChange('observaciones_pago', e.target.value)}
-              fullWidth
-              multiline
-              rows={2}
               placeholder="Observaciones opcionales sobre el pago..."
             />
+          </div>
 
-            <DetallesPagoManager
-              detalles={formData.detallesPago}
-              onChange={(detalles) => handleChange('detallesPago', detalles)}
-              errors={errors.detallesPago ? { general: errors.detallesPago } : {}}
-            />
-          </Stack>
-        </Box>
+          <DetallesPagoManager
+            detalles={formData.detallesPago}
+            onChange={(detalles) => handleChange('detallesPago', detalles)}
+          />
+        </div>
+      </div>
 
-        <Stack direction="row" spacing={2} sx={{ pt: 2, justifyContent: 'flex-end' }}>
-          {onCancel && (
-            <Button variant="outlined" onClick={onCancel} disabled={loading}>
-              Cancelar
-            </Button>
-          )}
-          <Button
-            type="submit"
-            variant="contained"
-            startIcon={loading ? <CircularProgress size={20} /> : <SaveIcon />}
-            disabled={loading}
-          >
-            {loading ? 'Guardando...' : 'Guardar'}
+      <div className="flex justify-end gap-3 pt-4">
+        {onCancel && (
+          <Button type="button" variant="outline" onClick={onCancel} disabled={loading}>
+            Cancelar
           </Button>
-        </Stack>
-      </Stack>
+        )}
+        <Button type="submit" variant="primary" icon={Save} loading={loading}>
+          {loading ? 'Guardando...' : 'Guardar'}
+        </Button>
+      </div>
     </form>
   );
 }
-
-export default MembreciaForm;
-

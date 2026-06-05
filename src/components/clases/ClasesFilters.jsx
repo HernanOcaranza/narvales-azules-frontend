@@ -1,207 +1,71 @@
 import React from 'react';
-import {
-  Box,
-  TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Stack,
-  Button,
-  Grid,
-} from '@mui/material';
-import { FilterList as FilterListIcon, Clear as ClearIcon } from '@mui/icons-material';
+import { X } from 'lucide-react';
 import * as grupoService from '../../services/grupoService';
 import * as disciplinaService from '../../services/disciplinaService';
 import * as categoriaService from '../../services/categoriaService';
+import { Select } from '../../components/ui';
 
-function ClasesFilters({ filters, onFilterChange, onClearFilters }) {
+export default function ClasesFilters({ filters = {}, onFilterChange = () => {}, onClearFilters = () => {} }) {
   const [grupos, setGrupos] = React.useState([]);
   const [disciplinas, setDisciplinas] = React.useState([]);
   const [categorias, setCategorias] = React.useState([]);
 
   React.useEffect(() => {
-    loadGrupos();
-    loadDisciplinas();
-    loadCategorias();
+    Promise.all([grupoService.getAll({ limit: 100 }), disciplinaService.getAll(), categoriaService.getAll()]).then(([g, d, c]) => {
+      const gruposData = g?.data?.data || g?.data || g || [];
+      const disciplinasData = d?.data?.data || d?.data || d || [];
+      const categoriasData = c?.data?.data || c?.data || c || [];
+      setGrupos(Array.isArray(gruposData) ? gruposData : []);
+      setDisciplinas(Array.isArray(disciplinasData) ? disciplinasData : []);
+      setCategorias(Array.isArray(categoriasData) ? categoriasData : []);
+    });
   }, []);
 
-  const loadGrupos = async () => {
-    try {
-      const data = await grupoService.getAll();
-      setGrupos(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error('Error al cargar grupos:', err);
-    }
-  };
-
-  const loadDisciplinas = async () => {
-    try {
-      const data = await disciplinaService.getAll();
-      setDisciplinas(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error('Error al cargar disciplinas:', err);
-    }
-  };
-
-  const loadCategorias = async () => {
-    try {
-      const data = await categoriaService.getAll();
-      setCategorias(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error('Error al cargar categorías:', err);
-    }
-  };
-
-  const handleChange = (field, value) => {
-    onFilterChange({ ...filters, [field]: value });
-  };
-
-  const handleDisciplinaChange = (value) => {
-    handleChange('idDisciplina', value);
-    handleChange('idGrupo', '');
-    handleChange('idCategoria', '');
-  };
-
-  const handleLimpiarFiltros = () => {
-    onClearFilters();
-  };
-
-  const tieneFiltrosActivos = React.useMemo(() => {
-    return filters.idGrupo || 
-      filters.idDisciplina ||
-      filters.idCategoria ||
-      filters.fechaDesde || 
-      filters.fechaHasta ||
-      filters.estado;
-  }, [filters]);
-
-  const gruposFiltrados = React.useMemo(() => {
-    let result = grupos;
-    if (filters.idDisciplina) {
-      result = result.filter(g => g.id_disciplina === parseInt(filters.idDisciplina, 10));
-    }
-    if (filters.idCategoria) {
-      result = result.filter(g => g.id_categoria === parseInt(filters.idCategoria, 10));
-    }
-    return result;
-  }, [grupos, filters.idDisciplina, filters.idCategoria]);
+  const handleChange = (field, value) => onFilterChange({ ...filters, [field]: value });
 
   return (
-    <Box sx={{ mb: 3, p: 2, bgcolor: 'background.paper', borderRadius: 1 }}>
-      <Stack spacing={2}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <FilterListIcon />
-          <strong>Filtros</strong>
-        </Box>
-        
-        <Grid container spacing={2}>
-          <Grid item xs={12} sm={6} md={3}>
-            <FormControl fullWidth>
-              <InputLabel>Disciplina</InputLabel>
-              <Select
-                value={filters.idDisciplina || ''}
-                label="Disciplina"
-                onChange={(e) => handleDisciplinaChange(e.target.value || null)}
-              >
-                <MenuItem value="">Todas</MenuItem>
-                {disciplinas.map((disc) => (
-                  <MenuItem key={disc.id_disciplina} value={disc.id_disciplina}>
-                    {disc.disciplina}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={3}>
-            <FormControl fullWidth>
-              <InputLabel>Categoría</InputLabel>
-              <Select
-                value={filters.idCategoria || ''}
-                label="Categoría"
-                onChange={(e) => handleChange('idCategoria', e.target.value || null)}
-              >
-                <MenuItem value="">Todas</MenuItem>
-                {categorias.map((cat) => (
-                  <MenuItem key={cat.id_categoria} value={cat.id_categoria}>
-                    {cat.categoria}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={3}>
-            <FormControl fullWidth>
-              <InputLabel>Grupo</InputLabel>
-              <Select
-                value={filters.idGrupo || ''}
-                label="Grupo"
-                onChange={(e) => handleChange('idGrupo', e.target.value || null)}
-              >
-                <MenuItem value="">Todos</MenuItem>
-                {gruposFiltrados.map((grupo) => (
-                  <MenuItem key={grupo.id_grupo} value={grupo.id_grupo}>
-                    {grupo.nombre}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={3}>
-            <FormControl fullWidth>
-              <InputLabel>Estado</InputLabel>
-              <Select
-                value={filters.estado || ''}
-                label="Estado"
-                onChange={(e) => handleChange('estado', e.target.value || null)}
-              >
-                <MenuItem value="">Todos</MenuItem>
-                <MenuItem value="pendiente">Pendiente</MenuItem>
-                <MenuItem value="realizada">Realizada</MenuItem>
-                <MenuItem value="suspendida">Suspendida</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={2}>
-            <TextField
-              fullWidth
-              label="Fecha Desde"
-              type="date"
-              value={filters.fechaDesde || ''}
-              onChange={(e) => handleChange('fechaDesde', e.target.value || null)}
-              InputLabelProps={{ shrink: true }}
-            />
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={2}>
-            <TextField
-              fullWidth
-              label="Fecha Hasta"
-              type="date"
-              value={filters.fechaHasta || ''}
-              onChange={(e) => handleChange('fechaHasta', e.target.value || null)}
-              InputLabelProps={{ shrink: true }}
-            />
-          </Grid>
-        </Grid>
-
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <Button
-            variant="outlined"
-            startIcon={<ClearIcon />}
-            onClick={handleLimpiarFiltros}
-            disabled={!tieneFiltrosActivos}
-          >
-            Limpiar Filtros
-          </Button>
-        </Box>
-      </Stack>
-    </Box>
+    <div className="space-y-3">
+      <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
+        <Select label="Grupo" value={filters.idGrupo || ''} onChange={(e) => handleChange('idGrupo', e.target.value)}>
+          <option value="">Todos</option>
+          {grupos.map(g => <option key={g.id_grupo} value={g.id_grupo}>{g.nombre}</option>)}
+        </Select>
+        <Select label="Disciplina" value={filters.idDisciplina || ''} onChange={(e) => handleChange('idDisciplina', e.target.value)}>
+          <option value="">Todas</option>
+          {disciplinas.map(d => <option key={d.id_disciplina} value={d.id_disciplina}>{d.disciplina}</option>)}
+        </Select>
+        <Select label="Categoría" value={filters.idCategoria || ''} onChange={(e) => handleChange('idCategoria', e.target.value)}>
+          <option value="">Todas</option>
+          {categorias.map(c => <option key={c.id_categoria} value={c.id_categoria}>{c.categoria}</option>)}
+        </Select>
+        <Select label="Estado" value={filters.estado || ''} onChange={(e) => handleChange('estado', e.target.value)}>
+          <option value="">Todos</option>
+          <option value="pendiente">Pendiente</option>
+          <option value="realizada">Realizada</option>
+          <option value="suspendida">Suspendida</option>
+        </Select>
+        <div className="flex flex-col gap-1">
+          <label className="text-xs text-text-secondary">Desde</label>
+          <input
+            type="date"
+            className="px-3 py-2 rounded-lg border border-gray-300 focus:border-primary-main focus:ring-2 focus:ring-primary-light/30 outline-none"
+            value={filters.fechaDesde || ''}
+            onChange={(e) => handleChange('fechaDesde', e.target.value)}
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-xs text-text-secondary">Hasta</label>
+          <input
+            type="date"
+            className="px-3 py-2 rounded-lg border border-gray-300 focus:border-primary-main focus:ring-2 focus:ring-primary-light/30 outline-none"
+            value={filters.fechaHasta || ''}
+            onChange={(e) => handleChange('fechaHasta', e.target.value)}
+          />
+        </div>
+      </div>
+      <button onClick={onClearFilters} className="px-3 py-1 rounded-full text-sm bg-gray-100 text-text-secondary hover:bg-gray-200 flex items-center gap-1 w-fit">
+        <X className="w-3 h-3" /> Limpiar
+      </button>
+    </div>
   );
 }
-
-export default ClasesFilters;

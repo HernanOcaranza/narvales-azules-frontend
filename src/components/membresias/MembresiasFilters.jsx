@@ -1,278 +1,183 @@
 import React from 'react';
-import {
-  Box,
-  TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Stack,
-  Button,
-  Grid,
-  Autocomplete,
-} from '@mui/material';
-import { FilterList as FilterListIcon, Clear as ClearIcon } from '@mui/icons-material';
-import * as alumnoService from '../../services/alumnoService';
-import * as grupoService from '../../services/grupoService';
+import { X, Search } from 'lucide-react';
+import * as tipoMembresiasService from '../../services/tipoMembresiasService';
 import * as disciplinaService from '../../services/disciplinaService';
-import * as tutorService from '../../services/tutorService';
+import * as grupoService from '../../services/grupoService';
+import * as alumnoService from '../../services/alumnoService';
+import { Select } from '../../components/ui';
 
-function MembresiasFilters({ filters, onFilterChange, onClearFilters, tiposMembrecia = [] }) {
-  const [alumnos, setAlumnos] = React.useState([]);
-  const [grupos, setGrupos] = React.useState([]);
+export default function MembresiasFilters({ filters = {}, onFilterChange = () => {}, onClearFilters = () => {} }) {
+  const [tipos, setTipos] = React.useState([]);
   const [disciplinas, setDisciplinas] = React.useState([]);
-  const [tutores, setTutores] = React.useState([]);
-  const [alumnoSearch, setAlumnoSearch] = React.useState('');
-  const [tutorSearch, setTutorSearch] = React.useState('');
-  const [loadingAlumnos, setLoadingAlumnos] = React.useState(false);
-  const [loadingTutores, setLoadingTutores] = React.useState(false);
+  const [grupos, setGrupos] = React.useState([]);
+  const [searchText, setSearchText] = React.useState('');
+  const [searchResults, setSearchResults] = React.useState([]);
+  const [searching, setSearching] = React.useState(false);
+  const [showDropdown, setShowDropdown] = React.useState(false);
+  const searchRef = React.useRef(null);
+  const debounceRef = React.useRef(null);
+
+  const selectedAlumno = filters.idAlumno && searchResults.length > 0
+    ? searchResults.find(a => a.id_alumno === parseInt(filters.idAlumno))
+    : null;
 
   React.useEffect(() => {
-    loadGrupos();
-    loadDisciplinas();
+    Promise.all([
+      tipoMembresiasService.getAll({ limit: 100 }),
+      disciplinaService.getAll({ limit: 100 }),
+      grupoService.getAll({ limit: 100 }),
+    ]).then(([t, d, g]) => {
+      const tiposData = t?.data?.data || t?.data || t || [];
+      const disciplinasData = d?.data?.data || d?.data || d || [];
+      const gruposData = g?.data?.data || g?.data || g || [];
+      setTipos(Array.isArray(tiposData) ? tiposData : []);
+      setDisciplinas(Array.isArray(disciplinasData) ? disciplinasData : []);
+      setGrupos(Array.isArray(gruposData) ? gruposData : []);
+    });
   }, []);
 
   React.useEffect(() => {
-    if (alumnoSearch && alumnoSearch.length >= 2) {
-      const timeoutId = setTimeout(() => {
-        searchAlumnos();
-      }, 300);
-      return () => clearTimeout(timeoutId);
-    } else {
-      setAlumnos([]);
+    function handleClick(e) {
+      if (searchRef.current && !searchRef.current.contains(e.target)) {
+        setShowDropdown(false);
+      }
     }
-  }, [alumnoSearch]);
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
 
-  React.useEffect(() => {
-    if (tutorSearch && tutorSearch.length >= 2) {
-      const timeoutId = setTimeout(() => {
-        searchTutores();
-      }, 300);
-      return () => clearTimeout(timeoutId);
-    } else {
-      setTutores([]);
+  const handleSearch = (value) => {
+    setSearchText(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (!value.trim()) {
+      setSearchResults([]);
+      setShowDropdown(false);
+      return;
     }
-  }, [tutorSearch]);
-
-  const loadGrupos = async () => {
-    try {
-      const data = await grupoService.getAll();
-      setGrupos(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error('Error al cargar grupos:', err);
-    }
+    debounceRef.current = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const res = await alumnoService.searchByNombre(value.trim());
+        const data = res?.data || res || [];
+        setSearchResults(Array.isArray(data) ? data : []);
+        setShowDropdown(true);
+      } catch {
+        setSearchResults([]);
+      } finally {
+        setSearching(false);
+      }
+    }, 300);
   };
 
-  const loadDisciplinas = async () => {
-    try {
-      const data = await disciplinaService.getAll();
-      setDisciplinas(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error('Error al cargar disciplinas:', err);
-    }
+  const handleSelectAlumno = (alumno) => {
+    setSearchText(`${alumno.apellido}, ${alumno.nombre}`);
+    setShowDropdown(false);
+    onFilterChange({ ...filters, idAlumno: alumno.id_alumno });
   };
 
-  const searchAlumnos = async () => {
-    setLoadingAlumnos(true);
-    try {
-      const data = await alumnoService.searchByNombre(alumnoSearch);
-      setAlumnos(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error('Error al buscar alumnos:', err);
-      setAlumnos([]);
-    } finally {
-      setLoadingAlumnos(false);
-    }
+  const handleClearAlumno = () => {
+    setSearchText('');
+    setSearchResults([]);
+    onFilterChange({ ...filters, idAlumno: null });
   };
 
-  const searchTutores = async () => {
-    setLoadingTutores(true);
-    try {
-      const data = await tutorService.searchByNombre(tutorSearch);
-      setTutores(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error('Error al buscar tutores:', err);
-      setTutores([]);
-    } finally {
-      setLoadingTutores(false);
-    }
-  };
-
-  const handleChange = (field, value) => {
-    onFilterChange({ ...filters, [field]: value });
-  };
-
-  const handleDisciplinaChange = (value) => {
-    handleChange('idDisciplina', value);
-    handleChange('idGrupo', '');
-  };
-
-  const handleLimpiarFiltros = () => {
-    onClearFilters();
-    setAlumnoSearch('');
-    setTutorSearch('');
-  };
-
-  const tieneFiltrosActivos = React.useMemo(() => {
-    return filters.idAlumno || 
-      filters.estado || 
-      filters.idTipoMembrecia || 
-      filters.idGrupo ||
-      filters.idDisciplina ||
-      filters.idTutor ||
-      filters.fechaDesde || 
-      filters.fechaHasta;
-  }, [filters]);
-
-  const gruposFiltrados = React.useMemo(() => {
-    if (!filters.idDisciplina) return grupos;
-    return grupos.filter(g => g.id_disciplina === parseInt(filters.idDisciplina, 10));
-  }, [grupos, filters.idDisciplina]);
+  const handleChange = (field, value) => onFilterChange({ ...filters, [field]: value });
 
   return (
-    <Box sx={{ mb: 3, p: 2, bgcolor: 'background.paper', borderRadius: 1 }}>
-      <Stack spacing={2}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <FilterListIcon />
-          <strong>Filtros</strong>
-        </Box>
-        
-        <Grid container spacing={2}>
-          <Grid item xs={12} sm={6} md={3}>
-            <Autocomplete
-              options={tutores}
-              getOptionLabel={(option) => `${option.nombre} ${option.apellido}`}
-              loading={loadingTutores}
-              onInputChange={(e, newValue) => setTutorSearch(newValue)}
-              onChange={(e, newValue) => handleChange('idTutor', newValue?.id_tutor || null)}
-              value={tutores.find(t => t.id_tutor === filters.idTutor) || null}
-              renderInput={(params) => (
-                <TextField {...params} label="Buscar Tutor" placeholder="Escriba el nombre del tutor..." />
-              )}
+    <div className="space-y-3">
+      <div className="grid grid-cols-1 md:grid-cols-7 gap-3">
+        <div className="md:col-span-2 relative" ref={searchRef}>
+          <label className="block text-sm font-medium text-text-primary mb-1">Alumno</label>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
+            <input
+              type="text"
+              placeholder={filters.idAlumno && !searchText ? '' : 'Buscar alumno...'}
+              value={searchText}
+              onChange={(e) => handleSearch(e.target.value)}
+              onFocus={() => { if (searchResults.length > 0) setShowDropdown(true); }}
+              className="w-full pl-10 pr-8 py-2 rounded-lg border border-gray-300 focus:border-primary-main focus:ring-2 focus:ring-primary-light/30 outline-none"
             />
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={3}>
-            <Autocomplete
-              options={alumnos}
-              getOptionLabel={(option) => `${option.nombre} ${option.apellido}`}
-              loading={loadingAlumnos}
-              onInputChange={(e, newValue) => setAlumnoSearch(newValue)}
-              onChange={(e, newValue) => handleChange('idAlumno', newValue?.id_alumno || null)}
-              value={alumnos.find(a => a.id_alumno === filters.idAlumno) || null}
-              renderInput={(params) => (
-                <TextField {...params} label="Buscar Alumno" placeholder="Escriba para buscar..." />
-              )}
-            />
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={3}>
-            <FormControl fullWidth>
-              <InputLabel>Estado</InputLabel>
-              <Select
-                value={filters.estado || ''}
-                label="Estado"
-                onChange={(e) => handleChange('estado', e.target.value || null)}
-              >
-                <MenuItem value="">Todos</MenuItem>
-                <MenuItem value="activa">Activa</MenuItem>
-                <MenuItem value="vencida">Vencida</MenuItem>
-                <MenuItem value="suspendida">Suspendida</MenuItem>
-                <MenuItem value="cancelada">Cancelada</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={3}>
-            <FormControl fullWidth>
-              <InputLabel>Tipo de Membresía</InputLabel>
-              <Select
-                value={filters.idTipoMembrecia || ''}
-                label="Tipo de Membresía"
-                onChange={(e) => handleChange('idTipoMembrecia', e.target.value || null)}
-              >
-                <MenuItem value="">Todos</MenuItem>
-                {tiposMembrecia.map((tipo) => (
-                  <MenuItem key={tipo.id_tipo_membrecia} value={tipo.id_tipo_membrecia}>
-                    {tipo.tipo_membrecia || `Tipo ${tipo.id_tipo_membrecia}`}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={3}>
-            <FormControl fullWidth>
-              <InputLabel>Disciplina</InputLabel>
-              <Select
-                value={filters.idDisciplina || ''}
-                label="Disciplina"
-                onChange={(e) => handleDisciplinaChange(e.target.value || null)}
-              >
-                <MenuItem value="">Todas</MenuItem>
-                {disciplinas.map((disc) => (
-                  <MenuItem key={disc.id_disciplina} value={disc.id_disciplina}>
-                    {disc.disciplina}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={3}>
-            <FormControl fullWidth>
-              <InputLabel>Grupo</InputLabel>
-              <Select
-                value={filters.idGrupo || ''}
-                label="Grupo"
-                onChange={(e) => handleChange('idGrupo', e.target.value || null)}
-              >
-                <MenuItem value="">Todos</MenuItem>
-                {gruposFiltrados.map((grupo) => (
-                  <MenuItem key={grupo.id_grupo} value={grupo.id_grupo}>
-                    {grupo.nombre}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={2}>
-            <TextField
-              fullWidth
-              label="Fecha Desde"
-              type="date"
-              value={filters.fechaDesde || ''}
-              onChange={(e) => handleChange('fechaDesde', e.target.value || null)}
-              InputLabelProps={{ shrink: true }}
-            />
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={2}>
-            <TextField
-              fullWidth
-              label="Fecha Hasta"
-              type="date"
-              value={filters.fechaHasta || ''}
-              onChange={(e) => handleChange('fechaHasta', e.target.value || null)}
-              InputLabelProps={{ shrink: true }}
-            />
-          </Grid>
-        </Grid>
-
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <Button
-            variant="outlined"
-            startIcon={<ClearIcon />}
-            onClick={handleLimpiarFiltros}
-            disabled={!tieneFiltrosActivos}
-          >
-            Limpiar Filtros
-          </Button>
-        </Box>
-      </Stack>
-    </Box>
+            {searchText && (
+              <button onClick={() => { setSearchText(''); setSearchResults([]); setShowDropdown(false); }} className="absolute right-2 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary">
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+          {filters.idAlumno && !searchText && (
+            <div className="mt-1 flex items-center gap-1 text-sm text-primary-main font-medium">
+              <span>Filtrando por: </span>
+              <span className="bg-primary-light/20 px-2 py-0.5 rounded-full">{selectedAlumno ? `${selectedAlumno.apellido}, ${selectedAlumno.nombre}` : `ID #${filters.idAlumno}`}</span>
+              <button onClick={handleClearAlumno} className="hover:bg-gray-100 rounded p-0.5">
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          )}
+          {showDropdown && searchResults.length > 0 && (
+            <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+              {searchResults.map(a => (
+                <button
+                  key={a.id_alumno}
+                  onClick={() => handleSelectAlumno(a)}
+                  className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 ${parseInt(filters.idAlumno) === a.id_alumno ? 'bg-primary-light/10 font-medium' : ''}`}
+                >
+                  {a.apellido}, {a.nombre} {a.dni ? `- DNI: ${a.dni}` : ''}
+                </button>
+              ))}
+            </div>
+          )}
+          {showDropdown && searching && (
+            <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-sm text-text-secondary">
+              Buscando...
+            </div>
+          )}
+          {showDropdown && !searching && searchText && searchResults.length === 0 && (
+            <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-sm text-text-secondary">
+              No se encontraron alumnos
+            </div>
+          )}
+        </div>
+        <Select label="Estado" value={filters.estado || ''} onChange={(e) => handleChange('estado', e.target.value)}>
+          <option value="">Todos</option>
+          <option value="activa">Activa</option>
+          <option value="vencida">Vencida</option>
+          <option value="suspendida">Suspendida</option>
+          <option value="cancelada">Cancelada</option>
+        </Select>
+        <Select label="Tipo" value={filters.idTipoMembrecia || ''} onChange={(e) => handleChange('idTipoMembrecia', e.target.value)}>
+          <option value="">Todos</option>
+          {tipos.map(t => <option key={t.id_tipo_membrecia} value={t.id_tipo_membrecia}>{t.tipo_membrecia}</option>)}
+        </Select>
+        <Select label="Disciplina" value={filters.idDisciplina || ''} onChange={(e) => handleChange('idDisciplina', e.target.value)}>
+          <option value="">Todas</option>
+          {disciplinas.map(d => <option key={d.id_disciplina} value={d.id_disciplina}>{d.disciplina}</option>)}
+        </Select>
+        <Select label="Grupo" value={filters.idGrupo || ''} onChange={(e) => handleChange('idGrupo', e.target.value)}>
+          <option value="">Todos</option>
+          {grupos.map(g => <option key={g.id_grupo} value={g.id_grupo}>{g.nombre}</option>)}
+        </Select>
+        <div className="flex flex-col gap-1">
+          <label className="text-xs text-text-secondary">Desde</label>
+          <input
+            type="date"
+            className="px-3 py-2 rounded-lg border border-gray-300 focus:border-primary-main focus:ring-2 focus:ring-primary-light/30 outline-none"
+            value={filters.fechaDesde || ''}
+            onChange={(e) => handleChange('fechaDesde', e.target.value)}
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-xs text-text-secondary">Hasta</label>
+          <input
+            type="date"
+            className="px-3 py-2 rounded-lg border border-gray-300 focus:border-primary-main focus:ring-2 focus:ring-primary-light/30 outline-none"
+            value={filters.fechaHasta || ''}
+            onChange={(e) => handleChange('fechaHasta', e.target.value)}
+          />
+        </div>
+      </div>
+      <button onClick={onClearFilters} className="px-3 py-1 rounded-full text-sm bg-gray-100 text-text-secondary hover:bg-gray-200 flex items-center gap-1 w-fit">
+        <X className="w-3 h-3" /> Limpiar
+      </button>
+    </div>
   );
 }
-
-export default MembresiasFilters;

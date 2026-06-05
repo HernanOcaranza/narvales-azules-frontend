@@ -1,48 +1,21 @@
 import React from 'react';
 import {
-  Box,
-  Button,
-  TextField,
-  InputAdornment,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  IconButton,
-  CircularProgress,
-  Stack,
-  Typography,
-  useMediaQuery,
-  useTheme,
-  Card,
-  CardContent,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Chip,
-  Divider,
-  Grid,
-  Alert,
-} from '@mui/material';
-import {
-  Add as AddIcon,
-  Search as SearchIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  Close as CloseIcon,
-  CheckCircle as CheckCircleIcon,
-  Cancel as CancelIcon,
-  Person as PersonIcon,
-  Category as CategoryIcon,
-  Assignment as AssignmentIcon,
-  CreditCard as CreditCardIcon,
-  Payment as PaymentIcon,
-  Info as InfoIcon,
-} from '@mui/icons-material';
+  Plus,
+  Search,
+  Edit,
+  Trash2,
+  X,
+  CheckCircle,
+  XCircle,
+  User,
+  Tag,
+  ClipboardList,
+  CreditCard,
+  Banknote,
+  Info,
+  ChevronDown,
+  Filter,
+} from 'lucide-react';
 import * as alumnoService from '../../services/alumnoService';
 import * as tutorService from '../../services/tutorService';
 import AlumnoForm from '../../components/Forms/AlumnoForm';
@@ -52,8 +25,14 @@ import FiltrosAlumnos from '../../components/FiltrosAlumnos/FiltrosAlumnos';
 import Pagination from '../../components/Pagination/Pagination';
 import { formatDate, formatCurrency } from '../../utils/helpers';
 import { filtrarAlumnosPorEstado, ordenarAlumnosPorEstado } from '../../utils/membresiaHelpers';
+import { useAuth } from '../../hooks/useAuth';
+import { Button, Input, Card, Chip, Spinner, Modal, Table, TableHead, TableBody, TableRow, TableHeadCell, TableCell } from '../../components/ui';
 
 function Alumnos() {
+  const { userRole } = useAuth();
+  const isProfesor = userRole === 'profesor';
+  const canEdit = !isProfesor;
+  const canViewMembershipStatus = !isProfesor;
   const [alumnos, setAlumnos] = React.useState([]);
   const [loading, setLoading] = React.useState(false);
   const [searchText, setSearchText] = React.useState('');
@@ -76,8 +55,14 @@ function Alumnos() {
     certificado: '',
   });
   const [pagination, setPagination] = React.useState({ page: 1, limit: 10, total: 0, totalPages: 0 });
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const [isMobile, setIsMobile] = React.useState(false);
+
+  React.useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 640);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   React.useEffect(() => {
     loadAlumnos(pagination.page, pagination.limit);
@@ -127,7 +112,7 @@ function Alumnos() {
 
   const handleSuccess = () => {
     handleCloseModal();
-    loadAlumnos(); // Recargar la lista después de crear/editar
+    loadAlumnos();
   };
 
   const handleDeleteClick = (item) => {
@@ -159,16 +144,13 @@ function Alumnos() {
     setLoadingAlumnoCompleto(true);
     
     try {
-      // Cargar información completa del alumno usando el nuevo endpoint
       const alumnoCompletoData = await alumnoService.getCompletoById(alumno.id_alumno);
       setAlumnoCompleto(alumnoCompletoData);
       setErrorAlumnoCompleto(null);
       
-      // Si el alumno completo tiene tutor, usarlo
       if (alumnoCompletoData?.tutor) {
         setTutorDetails(alumnoCompletoData.tutor);
       } else if (alumno.id_tutor && (!alumno.tutor || !alumno.tutor.telefono)) {
-        // Fallback: cargar tutor si no viene en la respuesta completa
         setLoadingTutor(true);
         try {
           const response = await tutorService.getById(alumno.id_tutor);
@@ -184,10 +166,8 @@ function Alumnos() {
       }
     } catch (error) {
       console.error('Error al cargar información completa del alumno:', error);
-      // Si falla el endpoint completo, usar los datos básicos del alumno
-      // Esto permite mostrar al menos la información básica aunque el endpoint falle
       setAlumnoCompleto(null);
-      setErrorAlumnoCompleto(error.message || 'No se pudo cargar la información completa del alumno. Se muestra información básica.');
+      setErrorAlumnoCompleto(error.message || 'No se pudo cargar la información completa del alumno.');
       if (alumno.tutor) {
         setTutorDetails(alumno.tutor);
       }
@@ -203,23 +183,12 @@ function Alumnos() {
     setErrorAlumnoCompleto(null);
   };
 
-  const getEstadoColor = (estado) => {
-    return estado === 1 ? 'success' : 'default';
-  };
+  const getEstadoColor = (estado) => estado === 1 ? 'success' : 'default';
+  const getEstadoLabel = (estado) => estado === 1 ? 'Activo' : 'Inactivo';
+  const getCertificadoLabel = (certificado) => certificado === 1 ? 'Sí' : 'No';
 
-  const getEstadoLabel = (estado) => {
-    return estado === 1 ? 'Activo' : 'Inactivo';
-  };
-
-  const getCertificadoLabel = (certificado) => {
-    return certificado === 1 ? 'Sí' : 'No';
-  };
-
-  // Filtrar localmente solo búsqueda de texto y estado de membresía
   const filteredAlumnos = React.useMemo(() => {
     let result = [...alumnos];
-
-    // Filtrar por búsqueda de texto
     if (searchText) {
       result = result.filter((alumno) =>
         Object.values(alumno).some((value) =>
@@ -227,231 +196,221 @@ function Alumnos() {
         )
       );
     }
-
-    // Filtrar por estado de membresía
     if (estadosFiltro.length > 0) {
       result = filtrarAlumnosPorEstado(result, estadosFiltro);
     }
-
-    // Ordenar por estado de membresía
     if (ordenEstado) {
       result = ordenarAlumnosPorEstado(result, ordenEstado);
     }
-
     return result;
   }, [alumnos, searchText, estadosFiltro, ordenEstado]);
 
   return (
-    <Box>
-      <Box
-        sx={{
-          mb: 3,
-          display: 'flex',
-          flexDirection: { xs: 'column', sm: 'row' },
-          gap: 2,
-          alignItems: { xs: 'stretch', sm: 'center' },
-          justifyContent: 'space-between',
-        }}
-      >
-        <TextField
+    <div>
+      {/* Header */}
+      <div className="mb-4 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
+        <Input
           placeholder="Buscar alumno..."
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
-          size="small"
-          sx={{ flexGrow: { xs: 1, sm: 0 }, width: { xs: '100%', sm: 300 } }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
-          }}
+          icon={Search}
+          className="w-full sm:w-72"
         />
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          sx={{ whiteSpace: 'nowrap' }}
-          onClick={() => handleOpenModal()}
-        >
-          Nuevo Alumno
-        </Button>
-      </Box>
+        {canEdit && (
+          <Button variant="primary" icon={Plus} onClick={() => handleOpenModal()}>
+            Nuevo Alumno
+          </Button>
+        )}
+      </div>
 
-      {/* Filtros de membresía */}
-      <FiltrosAlumnos
-        alumnos={alumnos}
-        estadosSeleccionados={estadosFiltro}
-        onEstadosChange={setEstadosFiltro}
-        orden={ordenEstado}
-        onOrdenChange={setOrdenEstado}
-        filtrosAdicionales={filtrosAdicionales}
-        onFiltrosChange={setFiltrosAdicionales}
-      />
+      {/* Filters Accordion */}
+      {canViewMembershipStatus && (
+        <div className="bg-white/95 rounded-lg mb-3 overflow-hidden border border-gray-200">
+          <button 
+            className="w-full px-4 py-2 flex items-center gap-2 text-text-primary font-medium hover:bg-gray-50 transition-colors"
+            onClick={() => setFiltrosAdicionales(prev => ({ ...prev, _expanded: !prev._expanded }))}
+          >
+            <Filter className="w-4 h-4 text-primary-main" />
+            Filtros
+            <ChevronDown className={`ml-auto w-4 h-4 transition-transform ${filtrosAdicionales._expanded ? 'rotate-180' : ''}`} />
+          </button>
+          {filtrosAdicionales._expanded && (
+            <div className="p-3 border-t border-gray-200">
+              <FiltrosAlumnos
+                alumnos={alumnos}
+                estadosSeleccionados={estadosFiltro}
+                onEstadosChange={setEstadosFiltro}
+                orden={ordenEstado}
+                onOrdenChange={setOrdenEstado}
+                filtrosAdicionales={filtrosAdicionales}
+                onFiltrosChange={setFiltrosAdicionales}
+              />
+            </div>
+          )}
+        </div>
+      )}
 
+      {/* Loading */}
       {loading ? (
-        <Box display="flex" justifyContent="center" p={4}>
-          <CircularProgress />
-        </Box>
+        <div className="flex justify-center p-8">
+          <Spinner size="lg" />
+        </div>
       ) : isMobile ? (
-        <>
-          <Stack spacing={2}>
-            {filteredAlumnos.length === 0 ? (
-              <Typography variant="body1" color="text.secondary" textAlign="center" p={4}>
-                No hay alumnos registrados
-              </Typography>
-            ) : (
-              filteredAlumnos.map((alumno) => (
-                <Card 
-                  key={alumno.id_alumno}
-                  sx={{ cursor: 'pointer' }}
-                  onClick={() => handleOpenDetailDialog(alumno)}
-                >
-                  <CardContent>
-                    <Typography variant="h6" gutterBottom>
-                      {alumno.nombre} {alumno.apellido}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      DNI: {alumno.dni || 'N/A'}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Fecha Nacimiento: {formatDate(alumno.fecha_nacimiento)}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Tutor: {alumno.tutor ? `${alumno.tutor.nombre} ${alumno.tutor.apellido}` : 'N/A'}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Categoría: {alumno.categoria?.categoria || 'N/A'}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Condición: {alumno.condicion?.condicion || 'N/A'}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Certificado Médico: {getCertificadoLabel(alumno.certificado ?? 0)}
-                      {alumno.certificado === 1 ? (
-                        <CheckCircleIcon sx={{ ml: 0.5, fontSize: 16, color: 'success.main', verticalAlign: 'middle' }} />
-                      ) : (
-                        <CancelIcon sx={{ ml: 0.5, fontSize: 16, color: 'error.main', verticalAlign: 'middle' }} />
-                      )}
-                    </Typography>
-                    <Box sx={{ mt: 1, mb: 1, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                      <Chip
-                        label={getEstadoLabel(alumno.estado)}
-                        color={getEstadoColor(alumno.estado)}
-                        size="small"
-                      />
-                      <EstadoMembresiaBadge alumno={alumno} size="small" />
-                    </Box>
-                    <Box sx={{ mt: 2, display: 'flex', gap: 1 }} onClick={(e) => e.stopPropagation()}>
-                      <IconButton size="small" color="primary" onClick={() => handleOpenModal(alumno)}>
-                        <EditIcon />
-                      </IconButton>
-                      <IconButton size="small" color="error" onClick={() => handleDeleteClick(alumno)}>
-                        <DeleteIcon />
-                      </IconButton>
-                    </Box>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </Stack>
+        /* Mobile View */
+        <div className="space-y-3">
+          {filteredAlumnos.length === 0 ? (
+            <p className="text-center text-text-secondary p-8">No hay alumnos registrados</p>
+          ) : (
+            filteredAlumnos.map((alumno) => (
+              <Card 
+                key={alumno.id_alumno}
+                hover
+                onClick={() => handleOpenDetailDialog(alumno)}
+              >
+                <div className="space-y-2">
+                  <h3 className="text-lg font-semibold text-text-primary">
+                    {alumno.nombre} {alumno.apellido}
+                  </h3>
+                  <p className="text-sm text-text-secondary">
+                    Fecha Nacimiento: {formatDate(alumno.fecha_nacimiento)}
+                  </p>
+                  <p className="text-sm text-text-secondary">
+                    Tutor: {alumno.tutor ? `${alumno.tutor.nombre} ${alumno.tutor.apellido}` : 'N/A'}
+                  </p>
+                  <p className="text-sm text-text-secondary">
+                    Categoría: {alumno.categoria?.categoria || 'N/A'}
+                  </p>
+                  <p className="text-sm text-text-secondary">
+                    Condición: {alumno.condicion?.condicion || 'N/A'}
+                  </p>
+                  <p className="text-sm text-text-secondary flex items-center gap-1">
+                    Certificado Médico: {getCertificadoLabel(alumno.certificado ?? 0)}
+                    {alumno.certificado === 1 ? (
+                      <CheckCircle className="w-4 h-4 text-green-600" />
+                    ) : (
+                      <XCircle className="w-4 h-4 text-red-600" />
+                    )}
+                  </p>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    <Chip
+                      label={getEstadoLabel(alumno.estado)}
+                      variant={getEstadoLabel(alumno.estado) === 'Activo' ? 'success' : 'default'}
+                      size="sm"
+                    />
+                    {!isProfesor && <EstadoMembresiaBadge alumno={alumno} size="sm" />}
+                  </div>
+                  {canEdit && (
+                    <div className="flex gap-2 mt-3" onClick={(e) => e.stopPropagation()}>
+                      <Button size="sm" icon={Edit} onClick={() => handleOpenModal(alumno)}>
+                        Editar
+                      </Button>
+                      <Button size="sm" variant="danger" icon={Trash2} onClick={() => handleDeleteClick(alumno)}>
+                        Eliminar
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </Card>
+            ))
+          )}
           <Pagination
             pagination={pagination}
             onPageChange={handlePageChange}
             onLimitChange={handleLimitChange}
           />
-        </>
+        </div>
       ) : (
+        /* Desktop View */
         <>
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableHeadCell>Nombre</TableHeadCell>
+                <TableHeadCell>Apellido</TableHeadCell>
+                <TableHeadCell>Fecha Nacimiento</TableHeadCell>
+                <TableHeadCell>Tutor</TableHeadCell>
+                <TableHeadCell>Categoría</TableHeadCell>
+                <TableHeadCell>Condición</TableHeadCell>
+                <TableHeadCell>Certificado</TableHeadCell>
+                <TableHeadCell>Estado</TableHeadCell>
+                {!isProfesor && <TableHeadCell>Estado Membresía</TableHeadCell>}
+                {!isProfesor && <TableHeadCell className="text-right">Acciones</TableHeadCell>}
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {filteredAlumnos.length === 0 ? (
                 <TableRow>
-                  <TableCell>ID</TableCell>
-                  <TableCell>Nombre</TableCell>
-                  <TableCell>Apellido</TableCell>
-                  <TableCell>DNI</TableCell>
-                  <TableCell>Fecha Nacimiento</TableCell>
-                  <TableCell>Tutor</TableCell>
-                  <TableCell>Categoría</TableCell>
-                  <TableCell>Condición</TableCell>
-                  <TableCell>Certificado</TableCell>
-                  <TableCell>Estado</TableCell>
-                  <TableCell>Estado Membresía</TableCell>
-                  <TableCell align="right">Acciones</TableCell>
+                  <TableCell colSpan={isProfesor ? 8 : 10} className="text-center">
+                    <p className="text-text-secondary py-4">No hay alumnos registrados</p>
+                  </TableCell>
                 </TableRow>
-              </TableHead>
-              <TableBody>
-                {filteredAlumnos.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={12} align="center">
-                      <Typography variant="body1" color="text.secondary" p={2}>
-                        No hay alumnos registrados
-                      </Typography>
+              ) : (
+                filteredAlumnos.map((alumno) => (
+                  <TableRow 
+                    key={alumno.id_alumno} 
+                    hover
+                    onClick={() => handleOpenDetailDialog(alumno)}
+                  >
+                    <TableCell>{alumno.nombre}</TableCell>
+                    <TableCell>{alumno.apellido}</TableCell>
+                    <TableCell>{formatDate(alumno.fecha_nacimiento)}</TableCell>
+                    <TableCell>
+                      {alumno.tutor ? `${alumno.tutor.nombre} ${alumno.tutor.apellido}` : 'N/A'}
                     </TableCell>
+                    <TableCell>{alumno.categoria?.categoria || 'N/A'}</TableCell>
+                    <TableCell>{alumno.condicion?.condicion || 'N/A'}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        {alumno.certificado === 1 ? (
+                          <>
+                            <CheckCircle className="w-4 h-4 text-green-600" />
+                            <span className="text-sm">Sí</span>
+                          </>
+                        ) : (
+                          <>
+                            <XCircle className="w-4 h-4 text-red-600" />
+                            <span className="text-sm">No</span>
+                          </>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={getEstadoLabel(alumno.estado)}
+                        variant={getEstadoLabel(alumno.estado) === 'Activo' ? 'success' : 'default'}
+                        size="sm"
+                      />
+                    </TableCell>
+                    {!isProfesor && (
+                      <TableCell>
+                        <EstadoMembresiaBadge alumno={alumno} size="sm" />
+                      </TableCell>
+                    )}
+                    {!isProfesor && (
+                      <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex justify-end gap-1">
+                          <button 
+                            onClick={() => handleOpenModal(alumno)}
+                            className="p-1.5 rounded-lg hover:bg-primary-main/10 text-primary-main transition-colors"
+                            title="Editar"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteClick(alumno)}
+                            className="p-1.5 rounded-lg hover:bg-red-100 text-red-600 transition-colors"
+                            title="Eliminar"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </TableCell>
+                    )}
                   </TableRow>
-                ) : (
-                  filteredAlumnos.map((alumno) => (
-                    <TableRow 
-                      key={alumno.id_alumno} 
-                      hover
-                      sx={{ cursor: 'pointer' }}
-                      onClick={() => handleOpenDetailDialog(alumno)}
-                    >
-                      <TableCell>{alumno.id_alumno}</TableCell>
-                      <TableCell>{alumno.nombre}</TableCell>
-                      <TableCell>{alumno.apellido}</TableCell>
-                      <TableCell>{alumno.dni || 'N/A'}</TableCell>
-                      <TableCell>{formatDate(alumno.fecha_nacimiento)}</TableCell>
-                      <TableCell>
-                        {alumno.tutor ? `${alumno.tutor.nombre} ${alumno.tutor.apellido}` : 'N/A'}
-                      </TableCell>
-                      <TableCell>{alumno.categoria?.categoria || 'N/A'}</TableCell>
-                      <TableCell>{alumno.condicion?.condicion || 'N/A'}</TableCell>
-                      <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                          {alumno.certificado === 1 ? (
-                            <>
-                              <CheckCircleIcon sx={{ fontSize: 18, color: 'success.main' }} />
-                              <Typography variant="body2" component="span">
-                                Sí
-                              </Typography>
-                            </>
-                          ) : (
-                            <>
-                              <CancelIcon sx={{ fontSize: 18, color: 'error.main' }} />
-                              <Typography variant="body2" component="span">
-                                No
-                              </Typography>
-                            </>
-                          )}
-                        </Box>
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={getEstadoLabel(alumno.estado)}
-                          color={getEstadoColor(alumno.estado)}
-                          size="small"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <EstadoMembresiaBadge alumno={alumno} size="small" />
-                      </TableCell>
-                      <TableCell align="right" onClick={(e) => e.stopPropagation()}>
-                        <Stack direction="row" spacing={1} justifyContent="flex-end">
-                          <IconButton size="small" color="primary" onClick={() => handleOpenModal(alumno)}>
-                            <EditIcon />
-                          </IconButton>
-                          <IconButton size="small" color="error" onClick={() => handleDeleteClick(alumno)}>
-                            <DeleteIcon />
-                          </IconButton>
-                        </Stack>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                ))
+              )}
+            </TableBody>
+          </Table>
           
           <Pagination
             pagination={pagination}
@@ -461,29 +420,21 @@ function Alumnos() {
         </>
       )}
 
-      {/* Modal para crear/editar alumno */}
-      <Dialog
+      {/* Create/Edit Modal */}
+      <Modal
         open={openModal}
         onClose={handleCloseModal}
-        maxWidth="md"
-        fullWidth
-        fullScreen={isMobile}
+        title={editingItem ? 'Editar Alumno' : 'Crear Nuevo Alumno'}
+        size="lg"
       >
-        <DialogTitle>
-          {editingItem ? 'Editar Alumno' : 'Crear Nuevo Alumno'}
-        </DialogTitle>
-        <DialogContent>
-          <Box sx={{ pt: 2 }}>
-            <AlumnoForm
-              onSuccess={handleSuccess}
-              onCancel={handleCloseModal}
-              initialData={editingItem}
-            />
-          </Box>
-        </DialogContent>
-      </Dialog>
+        <AlumnoForm
+          onSuccess={handleSuccess}
+          onCancel={handleCloseModal}
+          initialData={editingItem}
+        />
+      </Modal>
 
-      {/* Dialog de confirmación para eliminar */}
+      {/* Delete Confirmation Dialog */}
       <ConfirmDeleteDialog
         open={deleteDialog.open}
         onClose={handleDeleteCancel}
@@ -492,231 +443,172 @@ function Alumnos() {
         itemName={deleteDialog.item ? `${deleteDialog.item.nombre} ${deleteDialog.item.apellido}` : ''}
       />
 
-      {/* Modal de detalles del alumno */}
-      <Dialog
+      {/* Detail Dialog */}
+      <Modal
         open={detailDialog.open}
         onClose={handleCloseDetailDialog}
-        maxWidth="lg"
-        fullWidth
-        fullScreen={isMobile}
+        title="Detalles del Alumno"
+        size="lg"
+        footer={
+          <div className="flex justify-end gap-3">
+            <Button variant="ghost" onClick={handleCloseDetailDialog}>Cerrar</Button>
+            {!isProfesor && (alumnoCompleto || detailDialog.alumno) && (
+              <Button 
+                variant="primary" 
+                icon={Edit}
+                onClick={() => {
+                  handleCloseDetailDialog();
+                  handleOpenModal(alumnoCompleto || detailDialog.alumno);
+                }}
+              >
+                Editar Alumno
+              </Button>
+            )}
+          </div>
+        }
       >
-        <DialogTitle>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="h6">
-              Detalles del Alumno
-            </Typography>
-            <IconButton onClick={handleCloseDetailDialog} size="small">
-              <CloseIcon />
-            </IconButton>
-          </Box>
-        </DialogTitle>
-        <DialogContent>
-          {loadingAlumnoCompleto ? (
-            <Box display="flex" justifyContent="center" p={4}>
-              <CircularProgress />
-            </Box>
-          ) : (alumnoCompleto || detailDialog.alumno) ? (
-            <Box sx={{ pt: 2 }}>
-              {errorAlumnoCompleto && (
-                <Alert severity="warning" sx={{ mb: 2 }}>
-                  {errorAlumnoCompleto}
-                </Alert>
-              )}
-              {(() => {
-                const alumno = alumnoCompleto || detailDialog.alumno;
-                return (
-                  <Grid container spacing={3}>
-                    {/* Información Personal */}
-                    <Grid item xs={12}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                        <InfoIcon color="primary" />
-                        <Typography variant="h6" gutterBottom>
-                          Información Personal
-                        </Typography>
-                      </Box>
-                      <Divider sx={{ mb: 2 }} />
-                    </Grid>
-                    
-                    <Grid item xs={12} sm={6}>
-                      <Typography variant="body2" color="text.secondary">
-                        Nombre Completo
-                      </Typography>
-                      <Typography variant="body1" sx={{ mb: 2 }}>
-                        {`${alumno.nombre} ${alumno.apellido}`}
-                      </Typography>
-                    </Grid>
+        {loadingAlumnoCompleto ? (
+          <div className="flex justify-center p-8">
+            <Spinner size="lg" />
+          </div>
+        ) : (alumnoCompleto || detailDialog.alumno) ? (
+          <div className="space-y-6">
+            {errorAlumnoCompleto && (
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-sm">
+                {errorAlumnoCompleto}
+              </div>
+            )}
+            {(() => {
+              const alumno = alumnoCompleto || detailDialog.alumno;
+              return (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Información Personal */}
+                  <div className="md:col-span-2">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Info className="w-5 h-5 text-primary-main" />
+                      <h3 className="text-lg font-semibold text-text-primary">Información Personal</h3>
+                    </div>
+                    <div className="border-t border-gray-200" />
+                  </div>
 
-                    <Grid item xs={12} sm={6}>
-                      <Typography variant="body2" color="text.secondary">
-                        Estado
-                      </Typography>
-                      <Box sx={{ mb: 2 }}>
-                        <Chip
-                          label={getEstadoLabel(alumno.estado)}
-                          color={getEstadoColor(alumno.estado)}
-                          size="small"
-                        />
-                      </Box>
-                    </Grid>
+                  <div>
+                    <p className="text-sm text-text-secondary">Nombre Completo</p>
+                    <p className="font-medium">{`${alumno.nombre} ${alumno.apellido}`}</p>
+                  </div>
 
-                    <Grid item xs={12} sm={6}>
-                      <Typography variant="body2" color="text.secondary">
-                        DNI
-                      </Typography>
-                      <Typography variant="body1" sx={{ mb: 2 }}>
-                        {alumno.dni || 'N/A'}
-                      </Typography>
-                    </Grid>
+                  <div>
+                    <p className="text-sm text-text-secondary">Estado</p>
+                    <Chip
+                      label={getEstadoLabel(alumno.estado)}
+                      variant={getEstadoLabel(alumno.estado) === 'Activo' ? 'success' : 'default'}
+                      size="sm"
+                    />
+                  </div>
 
-                    <Grid item xs={12} sm={6}>
-                      <Typography variant="body2" color="text.secondary">
-                        Fecha de Nacimiento
-                      </Typography>
-                      <Typography variant="body1" sx={{ mb: 2 }}>
-                        {formatDate(alumno.fecha_nacimiento)}
-                      </Typography>
-                    </Grid>
+                  <div>
+                    <p className="text-sm text-text-secondary">DNI</p>
+                    <p className="font-medium">{alumno.dni || 'N/A'}</p>
+                  </div>
 
-                    <Grid item xs={12} sm={6}>
-                      <Typography variant="body2" color="text.secondary">
-                        Fecha de Registro
-                      </Typography>
-                      <Typography variant="body1" sx={{ mb: 2 }}>
-                        {formatDate(alumno.fecha_registro)}
-                      </Typography>
-                    </Grid>
+                  <div>
+                    <p className="text-sm text-text-secondary">Fecha de Nacimiento</p>
+                    <p className="font-medium">{formatDate(alumno.fecha_nacimiento)}</p>
+                  </div>
 
-                    <Grid item xs={12} sm={6}>
-                      <Typography variant="body2" color="text.secondary">
-                        Certificado Médico
-                      </Typography>
-                      <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                        {alumno.certificado === 1 ? (
-                          <>
-                            <CheckCircleIcon sx={{ fontSize: 20, color: 'success.main' }} />
-                            <Typography variant="body1" component="span">
-                              Sí
-                            </Typography>
-                          </>
-                        ) : (
-                          <>
-                            <CancelIcon sx={{ fontSize: 20, color: 'error.main' }} />
-                            <Typography variant="body1" component="span">
-                              No
-                            </Typography>
-                          </>
-                        )}
-                      </Box>
-                    </Grid>
+                  <div>
+                    <p className="text-sm text-text-secondary">Fecha de Registro</p>
+                    <p className="font-medium">{formatDate(alumno.fecha_registro)}</p>
+                  </div>
 
-                    <Grid item xs={12}>
-                      <Typography variant="body2" color="text.secondary">
-                        Dirección
-                      </Typography>
-                      <Typography variant="body1" sx={{ mb: 2 }}>
-                        {alumno.direccion || 'N/A'}
-                      </Typography>
-                    </Grid>
+                  <div>
+                    <p className="text-sm text-text-secondary">Certificado Médico</p>
+                    <div className="flex items-center gap-1">
+                      {alumno.certificado === 1 ? (
+                        <>
+                          <CheckCircle className="w-4 h-4 text-green-600" />
+                          <span>Sí</span>
+                        </>
+                      ) : (
+                        <>
+                          <XCircle className="w-4 h-4 text-red-600" />
+                          <span>No</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
 
-                    {/* Tutor */}
-                    <Grid item xs={12}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, mt: 2 }}>
-                        <PersonIcon color="primary" />
-                        <Typography variant="h6" gutterBottom>
-                          Tutor
-                        </Typography>
-                      </Box>
-                      <Divider sx={{ mb: 2 }} />
-                    </Grid>
+                  <div className="md:col-span-2">
+                    <p className="text-sm text-text-secondary">Dirección</p>
+                    <p className="font-medium">{alumno.direccion || 'N/A'}</p>
+                  </div>
 
-                    {loadingTutor ? (
-                      <Grid item xs={12}>
-                        <Box display="flex" justifyContent="center" p={2}>
-                          <CircularProgress size={24} />
-                        </Box>
-                      </Grid>
-                    ) : (tutorDetails || alumno.tutor) ? (
-                      <>
-                        <Grid item xs={12} sm={6}>
-                          <Typography variant="body2" color="text.secondary">
-                            Nombre Completo
-                          </Typography>
-                          <Typography variant="body1" sx={{ mb: 2 }}>
-                            {`${(tutorDetails || alumno.tutor)?.nombre || ''} ${(tutorDetails || alumno.tutor)?.apellido || ''}`.trim() || 'N/A'}
-                          </Typography>
-                        </Grid>
+                  {/* Tutor */}
+                  <div className="md:col-span-2">
+                    <div className="flex items-center gap-2 mb-3 mt-4">
+                      <User className="w-5 h-5 text-primary-main" />
+                      <h3 className="text-lg font-semibold text-text-primary">Tutor</h3>
+                    </div>
+                    <div className="border-t border-gray-200" />
+                  </div>
 
-                        <Grid item xs={12} sm={6}>
-                          <Typography variant="body2" color="text.secondary">
-                            Teléfono
-                          </Typography>
-                          <Typography variant="body1" sx={{ mb: 2 }}>
-                            {(tutorDetails || alumno.tutor)?.telefono || 'N/A'}
-                          </Typography>
-                        </Grid>
+                  {loadingTutor ? (
+                    <div className="md:col-span-2 flex justify-center p-4">
+                      <Spinner size="md" />
+                    </div>
+                  ) : (tutorDetails || alumno.tutor) ? (
+                    <>
+                      <div>
+                        <p className="text-sm text-text-secondary">Nombre Completo</p>
+                        <p className="font-medium">{`${(tutorDetails || alumno.tutor)?.nombre || ''} ${(tutorDetails || alumno.tutor)?.apellido || ''}`.trim() || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-text-secondary">Teléfono</p>
+                        <p className="font-medium">{(tutorDetails || alumno.tutor)?.telefono || 'N/A'}</p>
+                      </div>
+                      {(tutorDetails || alumno.tutor)?.dni && (
+                        <div>
+                          <p className="text-sm text-text-secondary">DNI</p>
+                          <p className="font-medium">{(tutorDetails || alumno.tutor).dni}</p>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="md:col-span-2">
+                      <p className="text-text-secondary italic">No hay tutor asignado</p>
+                    </div>
+                  )}
 
-                        {(tutorDetails || alumno.tutor)?.dni && (
-                          <Grid item xs={12} sm={6}>
-                            <Typography variant="body2" color="text.secondary">
-                              DNI
-                            </Typography>
-                            <Typography variant="body1" sx={{ mb: 2 }}>
-                              {(tutorDetails || alumno.tutor).dni}
-                            </Typography>
-                          </Grid>
-                        )}
-                      </>
-                    ) : (
-                      <Grid item xs={12}>
-                        <Typography variant="body2" color="text.secondary">
-                          No hay tutor asignado
-                        </Typography>
-                      </Grid>
-                    )}
+                  {/* Categoría y Condición */}
+                  <div className="md:col-span-2">
+                    <div className="flex items-center gap-2 mb-3 mt-4">
+                      <Tag className="w-5 h-5 text-primary-main" />
+                      <h3 className="text-lg font-semibold text-text-primary">Categoría y Condición</h3>
+                    </div>
+                    <div className="border-t border-gray-200" />
+                  </div>
 
-                    {/* Categoría y Condición */}
-                    <Grid item xs={12}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, mt: 2 }}>
-                        <CategoryIcon color="primary" />
-                        <Typography variant="h6" gutterBottom>
-                          Categoría y Condición
-                        </Typography>
-                      </Box>
-                      <Divider sx={{ mb: 2 }} />
-                    </Grid>
+                  <div>
+                    <p className="text-sm text-text-secondary">Categoría</p>
+                    <p className="font-medium">{alumno.categoria?.categoria || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-text-secondary">Condición</p>
+                    <p className="font-medium">{alumno.condicion?.condicion || 'N/A'}</p>
+                  </div>
 
-                    <Grid item xs={12} sm={6}>
-                      <Typography variant="body2" color="text.secondary">
-                        Categoría
-                      </Typography>
-                      <Typography variant="body1" sx={{ mb: 2 }}>
-                        {alumno.categoria?.categoria || 'N/A'}
-                      </Typography>
-                    </Grid>
+                  {/* Membresías */}
+                  {canViewMembershipStatus && (
+                    <>
+                      <div className="md:col-span-2">
+                        <div className="flex items-center gap-2 mb-3 mt-4">
+                          <CreditCard className="w-5 h-5 text-primary-main" />
+                          <h3 className="text-lg font-semibold text-text-primary">Membresías</h3>
+                        </div>
+                        <div className="border-t border-gray-200" />
+                      </div>
 
-                    <Grid item xs={12} sm={6}>
-                      <Typography variant="body2" color="text.secondary">
-                        Condición
-                      </Typography>
-                      <Typography variant="body1" sx={{ mb: 2 }}>
-                        {alumno.condicion?.condicion || 'N/A'}
-                      </Typography>
-                    </Grid>
-
-                    {/* Membresías */}
-                    <Grid item xs={12}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, mt: 2 }}>
-                        <CreditCardIcon color="primary" />
-                        <Typography variant="h6" gutterBottom>
-                          Membresías
-                        </Typography>
-                      </Box>
-                      <Divider sx={{ mb: 2 }} />
-                    </Grid>
-
-                    {alumnoCompleto?.membresias && alumnoCompleto.membresias.length > 0 ? (
-                      <Grid item xs={12}>
-                        <Stack spacing={3}>
+                      {alumnoCompleto?.membresias && alumnoCompleto.membresias.length > 0 ? (
+                        <div className="md:col-span-2 space-y-4">
                           {alumnoCompleto.membresias.map((membresia, index) => {
                             const totalPago = membresia.pago?.detalles?.reduce(
                               (sum, detalle) => sum + (parseFloat(detalle.monto_parcial) || 0),
@@ -724,206 +616,136 @@ function Alumnos() {
                             ) || 0;
 
                             return (
-                              <Card key={membresia.id_membrecia || index} variant="outlined" sx={{ p: 2 }}>
-                                <Box sx={{ mb: 2 }}>
-                                  <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                              <div key={membresia.id_membrecia || index} className="border border-gray-200 rounded-lg p-4">
+                                <div className="mb-3">
+                                  <h4 className="font-semibold text-text-primary">
                                     Membresía #{index + 1} - {membresia.tipo_membrecia?.tipo_membrecia || 'N/A'}
-                                  </Typography>
-                                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 1 }}>
+                                  </h4>
+                                  <div className="flex gap-2 mt-2">
                                     <Chip
                                       label={membresia.estado || 'N/A'}
-                                      color={membresia.estado === 'activa' ? 'success' : 'default'}
-                                      size="small"
+                                      variant={membresia.estado === 'activa' ? 'success' : 'default'}
+                                      size="sm"
                                     />
-                                  </Box>
-                                </Box>
+                                  </div>
+                                </div>
 
-                                <Grid container spacing={2} sx={{ mb: 2 }}>
-                                  <Grid item xs={12} sm={6}>
-                                    <Typography variant="body2" color="text.secondary">
-                                      Fecha Inicio
-                                    </Typography>
-                                    <Typography variant="body2">
-                                      {formatDate(membresia.fecha_inicio)}
-                                    </Typography>
-                                  </Grid>
-                                  <Grid item xs={12} sm={6}>
-                                    <Typography variant="body2" color="text.secondary">
-                                      Fecha Fin
-                                    </Typography>
-                                    <Typography variant="body2">
-                                      {formatDate(membresia.fecha_fin)}
-                                    </Typography>
-                                  </Grid>
+                                <div className="grid grid-cols-2 gap-3 mb-3">
+                                  <div>
+                                    <p className="text-xs text-text-secondary">Fecha Inicio</p>
+                                    <p className="text-sm">{formatDate(membresia.fecha_inicio)}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-text-secondary">Fecha Fin</p>
+                                    <p className="text-sm">{formatDate(membresia.fecha_fin)}</p>
+                                  </div>
                                   {membresia.grupo && (
                                     <>
-                                      <Grid item xs={12} sm={6}>
-                                        <Typography variant="body2" color="text.secondary">
-                                          Grupo
-                                        </Typography>
-                                        <Typography variant="body2">
-                                          {membresia.grupo?.nombre || 'N/A'}
-                                        </Typography>
-                                      </Grid>
-                                      <Grid item xs={12} sm={6}>
-                                        <Typography variant="body2" color="text.secondary">
-                                          Disciplina
-                                        </Typography>
-                                        <Typography variant="body2">
-                                          {membresia.grupo.disciplina?.disciplina || 'N/A'}
-                                        </Typography>
-                                      </Grid>
+                                      <div>
+                                        <p className="text-xs text-text-secondary">Grupo</p>
+                                        <p className="text-sm">{membresia.grupo?.nombre || 'N/A'}</p>
+                                      </div>
+                                      <div>
+                                        <p className="text-xs text-text-secondary">Disciplina</p>
+                                        <p className="text-sm">{membresia.grupo.disciplina?.disciplina || 'N/A'}</p>
+                                      </div>
                                     </>
                                   )}
                                   {membresia.tipo_membrecia?.frecuencia_semanal && (
-                                    <Grid item xs={12} sm={6}>
-                                      <Typography variant="body2" color="text.secondary">
-                                        Frecuencia Semanal
-                                      </Typography>
-                                      <Typography variant="body2">
-                                        {membresia.tipo_membrecia.frecuencia_semanal} veces por semana
-                                      </Typography>
-                                    </Grid>
+                                    <div>
+                                      <p className="text-xs text-text-secondary">Frecuencia Semanal</p>
+                                      <p className="text-sm">{membresia.tipo_membrecia.frecuencia_semanal} veces por semana</p>
+                                    </div>
                                   )}
-                                </Grid>
+                                </div>
 
                                 {/* Pago */}
                                 {membresia.pago && (
-                                  <Box sx={{ mt: 2, pt: 2, borderTop: 1, borderColor: 'divider' }}>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                                      <PaymentIcon color="primary" fontSize="small" />
-                                      <Typography variant="subtitle2" fontWeight="bold">
-                                        Pago
-                                      </Typography>
-                                    </Box>
-                                    <Grid container spacing={2} sx={{ mb: 2 }}>
-                                      <Grid item xs={12} sm={6}>
-                                        <Typography variant="body2" color="text.secondary">
-                                          Fecha de Pago
-                                        </Typography>
-                                        <Typography variant="body2">
-                                          {formatDate(membresia.pago.fecha_pago)}
-                                        </Typography>
-                                      </Grid>
-                                      <Grid item xs={12} sm={6}>
-                                        <Typography variant="body2" color="text.secondary">
-                                          Estado
-                                        </Typography>
+                                  <div className="mt-3 pt-3 border-t border-gray-200">
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <Banknote className="w-4 h-4 text-primary-main" />
+                                      <h5 className="font-semibold text-sm">Pago</h5>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3 mb-3">
+                                      <div>
+                                        <p className="text-xs text-text-secondary">Fecha de Pago</p>
+                                        <p className="text-sm">{formatDate(membresia.pago.fecha_pago)}</p>
+                                      </div>
+                                      <div>
+                                        <p className="text-xs text-text-secondary">Estado</p>
                                         <Chip
                                           label={membresia.pago.estado || 'N/A'}
-                                          color={membresia.pago.estado === 'completado' ? 'success' : 'default'}
-                                          size="small"
+                                          variant={membresia.pago.estado === 'completado' ? 'success' : 'default'}
+                                          size="sm"
                                         />
-                                      </Grid>
+                                      </div>
                                       {membresia.pago.observaciones && (
-                                        <Grid item xs={12}>
-                                          <Typography variant="body2" color="text.secondary">
-                                            Observaciones
-                                          </Typography>
-                                          <Typography variant="body2">
-                                            {membresia.pago.observaciones}
-                                          </Typography>
-                                        </Grid>
+                                        <div className="col-span-2">
+                                          <p className="text-xs text-text-secondary">Observaciones</p>
+                                          <p className="text-sm">{membresia.pago.observaciones}</p>
+                                        </div>
                                       )}
                                       {totalPago > 0 && (
-                                        <Grid item xs={12}>
-                                          <Typography variant="body2" color="text.secondary">
-                                            Total Pagado
-                                          </Typography>
-                                          <Typography variant="h6" color="primary">
-                                            {formatCurrency(totalPago)}
-                                          </Typography>
-                                        </Grid>
+                                        <div className="col-span-2">
+                                          <p className="text-xs text-text-secondary">Total Pagado</p>
+                                          <p className="text-lg font-bold text-primary-main">{formatCurrency(totalPago)}</p>
+                                        </div>
                                       )}
-                                    </Grid>
+                                    </div>
 
                                     {/* Detalles de Pago */}
                                     {membresia.pago.detalles && membresia.pago.detalles.length > 0 && (
-                                      <Box sx={{ mt: 2 }}>
-                                        <Typography variant="body2" fontWeight="bold" gutterBottom>
-                                          Detalles de Pago:
-                                        </Typography>
-                                        <Stack spacing={1}>
-                                          {membresia.pago.detalles.map((detalle, detalleIndex) => (
-                                            <Box
-                                              key={detalle.id_detalle_pago || detalleIndex}
-                                              sx={{
-                                                p: 1.5,
-                                                bgcolor: 'grey.50',
-                                                borderRadius: 1,
-                                                border: 1,
-                                                borderColor: 'grey.200',
-                                              }}
-                                            >
-                                              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
-                                                <Typography variant="body2" fontWeight="medium">
-                                                  {detalle.metodo_pago === 'efectivo' ? '💵 Efectivo' :
-                                                   detalle.metodo_pago === 'transferencia' ? '🏦 Transferencia' :
-                                                   detalle.metodo_pago === 'tarjeta' ? '💳 Tarjeta' :
-                                                   detalle.metodo_pago || 'N/A'}
-                                                </Typography>
-                                                <Typography variant="body2" fontWeight="bold">
-                                                  {formatCurrency(detalle.monto_parcial)}
-                                                </Typography>
-                                              </Box>
-                                              <Typography variant="caption" color="text.secondary">
-                                                Fecha: {formatDate(detalle.fecha_detalle)}
-                                              </Typography>
-                                              {detalle.referencia_transferencia && (
-                                                <Typography variant="caption" color="text.secondary" display="block">
-                                                  Referencia: {detalle.referencia_transferencia}
-                                                </Typography>
-                                              )}
-                                            </Box>
-                                          ))}
-                                        </Stack>
-                                      </Box>
+                                      <div className="mt-3 space-y-2">
+                                        <p className="text-sm font-medium">Detalles de Pago:</p>
+                                        {membresia.pago.detalles.map((detalle, detalleIndex) => (
+                                          <div
+                                            key={detalle.id_detalle_pago || detalleIndex}
+                                            className="p-2 bg-gray-50 rounded-lg border border-gray-200"
+                                          >
+                                            <div className="flex justify-between items-center">
+                                              <span className="text-sm font-medium">
+                                                {detalle.metodo_pago === 'efectivo' ? '💵 Efectivo' :
+                                                 detalle.metodo_pago === 'transferencia' ? '🏦 Transferencia' :
+                                                 detalle.metodo_pago === 'tarjeta' ? '💳 Tarjeta' :
+                                                 detalle.metodo_pago || 'N/A'}
+                                              </span>
+                                              <span className="text-sm font-bold">{formatCurrency(detalle.monto_parcial)}</span>
+                                            </div>
+                                            <p className="text-xs text-text-secondary">
+                                              Fecha: {formatDate(detalle.fecha_detalle)}
+                                            </p>
+                                            {detalle.referencia_transferencia && (
+                                              <p className="text-xs text-text-secondary">
+                                                Referencia: {detalle.referencia_transferencia}
+                                              </p>
+                                            )}
+                                          </div>
+                                        ))}
+                                      </div>
                                     )}
-                                  </Box>
+                                  </div>
                                 )}
-                              </Card>
+                              </div>
                             );
                           })}
-                        </Stack>
-                      </Grid>
-                    ) : (
-                      <Grid item xs={12}>
-                        <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-                          Este alumno no tiene membresías registradas
-                        </Typography>
-                      </Grid>
-                    )}
-                  </Grid>
-                );
-              })()}
-            </Box>
-          ) : (
-            <Box p={2}>
-              <Typography variant="body2" color="error">
-                Error al cargar la información del alumno
-              </Typography>
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDetailDialog}>Cerrar</Button>
-          {(alumnoCompleto || detailDialog.alumno) && (
-            <Button
-              variant="contained"
-              startIcon={<EditIcon />}
-              onClick={() => {
-                handleCloseDetailDialog();
-                handleOpenModal(alumnoCompleto || detailDialog.alumno);
-              }}
-            >
-              Editar Alumno
-            </Button>
-          )}
-        </DialogActions>
-      </Dialog>
-    </Box>
+                        </div>
+                      ) : (
+                        <div className="md:col-span-2">
+                          <p className="text-text-secondary italic">Este alumno no tiene membresías registradas</p>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              );
+            })()}
+          </div>
+        ) : (
+          <p className="text-red-600">Error al cargar la información del alumno</p>
+        )}
+      </Modal>
+    </div>
   );
 }
 
 export default Alumnos;
-

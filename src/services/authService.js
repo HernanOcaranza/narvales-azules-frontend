@@ -27,8 +27,10 @@ export const login = async (usuario, contrasenia) => {
     localStorage.setItem('token', data.token);
   }
   
-  // Guardar información del usuario si existe
-  if (data.usuario) {
+  // Guardar información del usuario si existe (el backend devuelve 'empleado')
+  if (data.empleado) {
+    localStorage.setItem('usuario', JSON.stringify(data.empleado));
+  } else if (data.usuario) {
     localStorage.setItem('usuario', JSON.stringify(data.usuario));
   }
   
@@ -63,9 +65,21 @@ export const getToken = () => {
  * Obtiene la información del usuario autenticado
  * @returns {object|null} - Información del usuario o null
  */
+export const setAuth = (token, usuario) => {
+  localStorage.setItem('token', token);
+  localStorage.setItem('usuario', JSON.stringify(usuario));
+};
+
 export const getUser = () => {
   const usuario = localStorage.getItem('usuario');
-  return usuario ? JSON.parse(usuario) : null;
+  if (!usuario) return null;
+  
+  const parsed = JSON.parse(usuario);
+  // Si el objeto guardado tiene 'token' y 'empleado', devolver solo empleado
+  if (parsed.empleado) {
+    return parsed.empleado;
+  }
+  return parsed;
 };
 
 // Exportar todas las funciones como objeto también

@@ -1,0 +1,149 @@
+<svg width="1600" height="900" viewBox="0 0 1600 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+
+  <!-- Fondo -->
+  <rect width="1600" height="900" fill="#DCEFF7"/>
+
+  <!-- BLOBS GRANDES -->
+  <circle class="float1" cx="-80" cy="180" r="320" fill="#C8E5F3" opacity="0.85"/>
+  <circle class="float2" cx="140" cy="340" r="220" fill="#BFE0F0" opacity="0.55"/>
+  <circle class="float3" cx="1280" cy="-40" r="260" fill="#C7E4F2" opacity="0.7"/>
+  <circle cx="1480" cy="120" r="180" fill="#D5EEF8" opacity="0.45"/>
+  <circle cx="1260" cy="940" r="320" fill="#C4E2F1" opacity="0.75"/>
+  <circle cx="980" cy="860" r="200" fill="#D7F0F9" opacity="0.45"/>
+
+  <!-- FORMAS ORGÁNICAS -->
+  <path class="drift"
+    d="M620 40C760 -10 930 40 1010 170C1090 300 1060 490 930 610C800 730 650 730 570 650C490 570 520 470 500 360C480 250 470 100 620 40Z"
+    fill="white"
+    opacity="0.22"
+  />
+
+  <path class="drift"
+    d="M260 560C360 500 500 540 560 640C620 740 580 860 470 930C360 1000 220 960 170 860C120 760 160 620 260 560Z"
+    fill="white"
+    opacity="0.15"
+  />
+
+  <path class="drift"
+    d="M1180 320C1280 260 1410 300 1460 390C1510 480 1480 610 1370 670C1260 730 1140 690 1090 600C1040 510 1080 380 1180 320Z"
+    fill="white"
+    opacity="0.14"
+  />
+
+  <!-- MUCHAS FORMAS MEDIANAS -->
+  <circle class="float1" cx="240" cy="120" r="90" fill="#EAF8FD" opacity="0.35"/>
+  <circle class="float2" cx="420" cy="220" r="70" fill="#FFFFFF" opacity="0.18"/>
+  <circle class="float3" cx="600" cy="120" r="60" fill="#CDEAF6" opacity="0.4"/>
+  <circle class="pulse" cx="820" cy="180" r="80" fill="#FFFFFF" opacity="0.16"/>
+  <circle cx="980" cy="120" r="55" fill="#CDEAF6" opacity="0.4"/>
+  <circle cx="1140" cy="220" r="75" fill="#FFFFFF" opacity="0.18"/>
+  <circle cx="1380" cy="260" r="90" fill="#DDF4FB" opacity="0.3"/>
+
+  <circle class="float1" cx="180" cy="520" r="65" fill="#FFFFFF" opacity="0.16"/>
+  <circle class="float2" cx="360" cy="460" r="45" fill="#DDF4FB" opacity="0.32"/>
+  <circle class="float3" cx="540" cy="560" r="70" fill="#FFFFFF" opacity="0.14"/>
+  <circle class="pulse" cx="760" cy="480" r="55" fill="#DDF4FB" opacity="0.32"/>
+  <circle cx="980" cy="540" r="65" fill="#FFFFFF" opacity="0.16"/>
+  <circle cx="1180" cy="460" r="50" fill="#DDF4FB" opacity="0.3"/>
+  <circle cx="1380" cy="560" r="72" fill="#FFFFFF" opacity="0.15"/>
+
+  <circle class="float1" cx="120" cy="760" r="90" fill="#DDF4FB" opacity="0.28"/>
+  <circle class="float2" cx="340" cy="820" r="60" fill="#FFFFFF" opacity="0.16"/>
+  <circle class="float3" cx="560" cy="760" r="70" fill="#CDEAF6" opacity="0.32"/>
+  <circle class="pulse" cx="780" cy="820" r="50" fill="#FFFFFF" opacity="0.14"/>
+  <circle cx="980" cy="760" r="65" fill="#DDF4FB" opacity="0.28"/>
+  <circle cx="1180" cy="820" r="55" fill="#FFFFFF" opacity="0.15"/>
+  <circle cx="1440" cy="760" r="85" fill="#CDEAF6" opacity="0.32"/>
+
+  <!-- BURBUJAS PEQUEÑAS -->
+  <circle class="bubble" cx="90" cy="120" r="14" fill="white" opacity="0.22"/>
+  <circle class="bubble" cx="160" cy="220" r="10" fill="white" opacity="0.18"/>
+  <circle class="bubble" cx="300" cy="320" r="12" fill="white" opacity="0.2"/>
+  <circle class="bubble" cx="520" cy="180" r="8" fill="white" opacity="0.22"/>
+  <circle class="bubble" cx="680" cy="260" r="14" fill="white" opacity="0.18"/>
+  <circle class="bubble" cx="860" cy="80" r="10" fill="white" opacity="0.2"/>
+  <circle class="bubble" cx="1020" cy="220" r="12" fill="white" opacity="0.18"/>
+  <circle class="bubble" cx="1180" cy="120" r="8" fill="white" opacity="0.22"/>
+  <circle class="bubble" cx="1320" cy="320" r="15" fill="white" opacity="0.18"/>
+  <circle class="bubble" cx="1500" cy="220" r="10" fill="white" opacity="0.2"/>
+
+  <circle class="bubble" cx="220" cy="640" r="10" fill="white" opacity="0.18"/>
+  <circle class="bubble" cx="420" cy="700" r="14" fill="white" opacity="0.22"/>
+  <circle class="bubble" cx="620" cy="620" r="8" fill="white" opacity="0.2"/>
+  <circle class="bubble" cx="820" cy="700" r="12" fill="white" opacity="0.18"/>
+  <circle class="bubble" cx="1020" cy="660" r="15" fill="white" opacity="0.2"/>
+  <circle class="bubble" cx="1220" cy="720" r="10" fill="white" opacity="0.18"/>
+  <circle class="bubble" cx="1420" cy="640" r="14" fill="white" opacity="0.22"/>
+
+  <!-- Overlay -->
+  <rect width="1600" height="900" fill="url(#overlay)"/>
+
+  <defs>
+    <linearGradient id="overlay" x1="0" y1="0" x2="1600" y2="900" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF" stop-opacity="0.03"/>
+      <stop offset="1" stop-color="#8DCDE5" stop-opacity="0.05"/>
+    </linearGradient>
+  </defs>
+
+  <style>
+    .float1, .float2, .float3, .drift, .bubble, .pulse {
+      transform-box: fill-box;
+      transform-origin: center;
+    }
+
+    @keyframes float1 {
+      0% { transform: translate(0, 0); }
+      100% { transform: translate(15px, 15px); }
+    }
+
+    @keyframes float2 {
+      0% { transform: translate(0, 0); }
+      100% { transform: translate(20px, 0); }
+    }
+
+    @keyframes float3 {
+      0% { transform: translate(0, 0); }
+      100% { transform: translate(0, 12px); }
+    }
+
+    @keyframes drift {
+      0% { transform: translate(0, 0); }
+      100% { transform: translate(25px, 25px); }
+    }
+
+    @keyframes bubble {
+      0% { transform: translate(0, 0); }
+      100% { transform: translate(0, -80px); }
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      100% { transform: scale(1.03); }
+    }
+
+    .float1 {
+      animation: float1 20s ease-in-out infinite alternate;
+    }
+
+    .float2 {
+      animation: float2 25s ease-in-out infinite alternate;
+    }
+
+    .float3 {
+      animation: float3 18s ease-in-out infinite alternate;
+    }
+
+    .drift {
+      animation: drift 30s ease-in-out infinite alternate;
+    }
+
+    .bubble {
+      animation: bubble 35s ease-in-out infinite;
+    }
+
+    .pulse {
+      animation: pulse 12s ease-in-out infinite alternate;
+    }
+  </style>
+
+</svg>
