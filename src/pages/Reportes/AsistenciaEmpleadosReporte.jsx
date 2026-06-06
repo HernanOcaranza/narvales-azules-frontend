@@ -4,13 +4,14 @@ import { getAll as getEmpleados } from '../../services/empleadoService';
 import Button from '../../components/UI/Button';
 import Spinner from '../../components/UI/Spinner';
 import { FileText, Download, Search } from 'lucide-react';
+import { getTodayLocalDate, getOneMonthAgoLocalDate } from '../../utils/helpers';
 
 function AsistenciaEmpleadosReporte() {
   const [modo, setModo] = useState('general');
   const [empleados, setEmpleados] = useState([]);
   const [idEmpleado, setIdEmpleado] = useState('');
-  const [fechaDesde, setFechaDesde] = useState('');
-  const [fechaHasta, setFechaHasta] = useState('');
+  const [fechaDesde, setFechaDesde] = useState(getOneMonthAgoLocalDate());
+  const [fechaHasta, setFechaHasta] = useState(getTodayLocalDate());
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');

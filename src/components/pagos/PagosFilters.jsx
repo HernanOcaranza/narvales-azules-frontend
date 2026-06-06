@@ -58,9 +58,7 @@ export default function PagosFilters({ filters = {}, onFilterChange = () => {}, 
           onChange={(e) => handleChange('estado', e.target.value)}
         >
           <option value="">Estado - Todos</option>
-          <option value="completado">Completado</option>
-          <option value="pendiente">Pendiente</option>
-          <option value="parcial">Parcial</option>
+          <option value="completo">Completo</option>
         </select>
         <div className="flex flex-col gap-1">
           <label className="text-xs text-text-secondary">Desde</label>

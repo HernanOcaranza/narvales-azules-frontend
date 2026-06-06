@@ -16,6 +16,11 @@ import {
 } from 'lucide-react';
 import dashboardService from '../../services/dashboardService';
 import { LinearProgress, CircularProgress } from '../../components/ui';
+import { getTodayLocalDate } from '../../utils/helpers';
+
+function formatDateLocal(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
 
 const formatCurrency = (value) => {
   return new Intl.NumberFormat('es-AR', {
@@ -57,8 +62,8 @@ function Dashboard() {
   const [error, setError] = useState(null);
   const hoy = new Date();
   const mesAnterior = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1);
-  const [fechaDesde, setFechaDesde] = useState(mesAnterior.toISOString().split('T')[0]);
-  const [fechaHasta, setFechaHasta] = useState(hoy.toISOString().split('T')[0]);
+  const [fechaDesde, setFechaDesde] = useState(formatDateLocal(mesAnterior));
+  const [fechaHasta, setFechaHasta] = useState(getTodayLocalDate());
 
   useEffect(() => {
     loadData(fechaDesde, fechaHasta);
@@ -83,9 +88,11 @@ function Dashboard() {
   const handleClearFilter = () => {
     const hoy = new Date();
     const mesAnt = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1);
-    setFechaDesde(mesAnt.toISOString().split('T')[0]);
-    setFechaHasta(hoy.toISOString().split('T')[0]);
-    loadData(mesAnt.toISOString().split('T')[0], hoy.toISOString().split('T')[0]);
+    const desde = formatDateLocal(mesAnt);
+    const hasta = getTodayLocalDate();
+    setFechaDesde(desde);
+    setFechaHasta(hasta);
+    loadData(desde, hasta);
   };
 
   if (loading) {

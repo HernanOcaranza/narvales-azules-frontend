@@ -70,6 +70,16 @@ export const descargarPDFMembresias = (params = {}) => {
   descargarPDF(`${API_BASE_URL}${ENDPOINT}/membresias/pdf?${qs}`, 'membresias.pdf');
 };
 
+export const getReporteFinanciero = async (params = {}) => {
+  const response = await api.get(ENDPOINT + '/financiero', { params });
+  return response?.data || response;
+};
+
+export const descargarPDFReporteFinanciero = (params = {}) => {
+  const qs = buildParams(params);
+  descargarPDF(`${API_BASE_URL}${ENDPOINT}/financiero/pdf?${qs}`, 'reporte-financiero.pdf');
+};
+
 const reporteService = {
   getAsistenciaAlumnos,
   descargarPDFAsistenciaAlumnos,
@@ -77,6 +87,8 @@ const reporteService = {
   descargarPDFAsistenciaEmpleados,
   getMembresias,
   descargarPDFMembresias,
+  getReporteFinanciero,
+  descargarPDFReporteFinanciero,
 };
 
 export default reporteService;

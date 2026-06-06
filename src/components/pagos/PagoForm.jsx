@@ -2,10 +2,11 @@ import React from 'react';
 import { Save } from 'lucide-react';
 import * as pagosService from '../../services/pagosService';
 import * as empleadoService from '../../services/empleadoService';
+import { getTodayLocalDate } from '../../utils/helpers';
 import { Button, Input, Select } from '../ui';
 
 export default function PagoForm({ onSuccess, onCancel, initialData = null }) {
-  const today = new Date().toISOString().split('T')[0];
+  const today = getTodayLocalDate();
   const [formData, setFormData] = React.useState(initialData || { id_empleado: '', monto: '', fecha_pago: today, metodo_pago: 'efectivo', estado: 'completo', observaciones: '' });
   const [empleados, setEmpleados] = React.useState([]);
   const [loading, setLoading] = React.useState(false);

@@ -5,6 +5,7 @@ import { getAll as getAlumnos } from '../../services/alumnoService';
 import Button from '../../components/UI/Button';
 import Spinner from '../../components/UI/Spinner';
 import { FileText, Download, Search, User } from 'lucide-react';
+import { getTodayLocalDate, getOneMonthAgoLocalDate } from '../../utils/helpers';
 
 const MODOS = [
   { value: 'grupo', label: 'Por grupo' },
@@ -21,8 +22,8 @@ function AsistenciaAlumnosReporte() {
   const [idGrupo, setIdGrupo] = useState('');
   const [idAlumno, setIdAlumno] = useState('');
   const [alumnoNombre, setAlumnoNombre] = useState('');
-  const [fechaDesde, setFechaDesde] = useState('');
-  const [fechaHasta, setFechaHasta] = useState('');
+  const [fechaDesde, setFechaDesde] = useState(getOneMonthAgoLocalDate());
+  const [fechaHasta, setFechaHasta] = useState(getTodayLocalDate());
   const [soloActivas, setSoloActivas] = useState(true);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);

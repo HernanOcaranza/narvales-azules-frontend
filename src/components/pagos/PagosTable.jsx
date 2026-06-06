@@ -5,7 +5,7 @@ import { Table, TableHead, TableBody, TableRow, TableHeadCell, TableCell, Chip }
 
 export default function PagosTable({ pagos = [], loading, onViewDetails, onEdit, onDelete, isMobile }) {
   const getEstadoBadge = (estado) => {
-    const map = { completado: { v: 'success', l: 'Completado' }, pendiente: { v: 'warning', l: 'Pendiente' }, parcial: { v: 'info', l: 'Parcial' }, cancelado: { v: 'default', l: 'Cancelado' } };
+    const map = { completo: { v: 'success', l: 'Completo' }, completado: { v: 'success', l: 'Completado' } };
     return map[estado] || { v: 'default', l: estado };
   };
 

@@ -2,14 +2,14 @@ import React from 'react';
 import { X, Plus, Trash2 } from 'lucide-react';
 import * as pagosService from '../../services/pagosService';
 import * as detallePagosService from '../../services/detallePagosService';
-import { formatDate, formatCurrency } from '../../utils/helpers';
+import { formatDate, formatCurrency, getTodayLocalDate } from '../../utils/helpers';
 import { Button, Input, Modal } from '../ui';
 
 export default function PagoDetailsModal({ open, onClose, pago, onRefresh }) {
   const [loading, setLoading] = React.useState(false);
   const [showAddDetalle, setShowAddDetalle] = React.useState(false);
   const [detalles, setDetalles] = React.useState(pago?.detalles || []);
-  const [formDetalle, setFormDetalle] = React.useState({ metodo_pago: 'efectivo', monto_parcial: '', fecha_detalle: new Date().toISOString().split('T')[0], referencia_transferencia: '' });
+  const [formDetalle, setFormDetalle] = React.useState({ metodo_pago: 'efectivo', monto_parcial: '', fecha_detalle: getTodayLocalDate(), referencia_transferencia: '' });
 
   const handleAddDetalle = async () => {
     if (!formDetalle.monto_parcial) return;
@@ -18,7 +18,7 @@ export default function PagoDetailsModal({ open, onClose, pago, onRefresh }) {
       const nuevo = await detallePagosService.create({ ...formDetalle, id_pago: pago.id_pago, monto_parcial: parseFloat(formDetalle.monto_parcial) });
       setDetalles([...detalles, nuevo]);
       setShowAddDetalle(false);
-      setFormDetalle({ metodo_pago: 'efectivo', monto_parcial: '', fecha_detalle: new Date().toISOString().split('T')[0], referencia_transferencia: '' });
+      setFormDetalle({ metodo_pago: 'efectivo', monto_parcial: '', fecha_detalle: getTodayLocalDate(), referencia_transferencia: '' });
       if (onRefresh) onRefresh();
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
@@ -34,7 +34,7 @@ export default function PagoDetailsModal({ open, onClose, pago, onRefresh }) {
           <div><p className="text-sm text-text-secondary">Descripción</p><p className="font-medium">{pago.observaciones || '-'}</p></div>
           <div><p className="text-sm text-text-secondary">Monto Total</p><p className="font-bold text-primary-main text-lg">{formatCurrency(pago.detalles?.[0]?.monto_parcial)}</p></div>
           <div><p className="text-sm text-text-secondary">Fecha</p><p className="font-medium">{formatDate(pago.fecha_pago)}</p></div>
-          <div><p className="text-sm text-text-secondary">Estado</p><span className={`px-2 py-1 rounded text-xs font-medium ${pago.estado === 'completado' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}`}>{pago.estado}</span></div>
+          <div><p className="text-sm text-text-secondary">Estado</p><span className="px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800">{pago.estado}</span></div>
         </div>
         
         <div><h4 className="font-medium mb-2">Detalles de Pago</h4>

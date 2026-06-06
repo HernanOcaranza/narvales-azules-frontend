@@ -21,6 +21,7 @@ import ReportesLayout from './pages/Reportes/ReportesLayout';
 import AsistenciaAlumnosReporte from './pages/Reportes/AsistenciaAlumnosReporte';
 import AsistenciaEmpleadosReporte from './pages/Reportes/AsistenciaEmpleadosReporte';
 import MembresiasReporte from './pages/Reportes/MembresiasReporte';
+import ReporteFinanciero from './pages/Reportes/ReporteFinanciero';
 
 import { ROUTES } from './utils/constants';
 
@@ -55,6 +56,7 @@ function App() {
                       <Route path="asistencia-alumnos" element={<AsistenciaAlumnosReporte />} />
                       <Route path="asistencia-empleados" element={<AsistenciaEmpleadosReporte />} />
                       <Route path="membresias" element={<MembresiasReporte />} />
+                      <Route path="financiero" element={<ReporteFinanciero />} />
                     </Route>
                     <Route path="*" element={<Navigate to={ROUTES.ALUMNOS} replace />} />
                   </Routes>

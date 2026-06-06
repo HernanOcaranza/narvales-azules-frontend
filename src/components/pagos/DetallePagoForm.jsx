@@ -1,9 +1,10 @@
 import React from 'react';
 import { Save } from 'lucide-react';
+import { getTodayLocalDate } from '../../utils/helpers';
 import { Button, Input, Select } from '../ui';
 
 export default function DetallePagoForm({ onSuccess, onCancel, initialData = null }) {
-  const [formData, setFormData] = React.useState(initialData || { metodo_pago: 'efectivo', monto_parcial: '', fecha_detalle: new Date().toISOString().split('T')[0], referencia_transferencia: '' });
+  const [formData, setFormData] = React.useState(initialData || { metodo_pago: 'efectivo', monto_parcial: '', fecha_detalle: getTodayLocalDate(), referencia_transferencia: '' });
   const [loading, setLoading] = React.useState(false);
 
   const handleChange = (e) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));

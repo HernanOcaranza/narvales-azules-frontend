@@ -25,6 +25,7 @@ export const ROUTES = {
   REPORTES_ASISTENCIA_ALUMNOS: '/reportes/asistencia-alumnos',
   REPORTES_ASISTENCIA_EMPLEADOS: '/reportes/asistencia-empleados',
   REPORTES_MEMBRESIAS: '/reportes/membresias',
+  REPORTES_FINANCIERO: '/reportes/financiero',
 };
 
 // Estados comunes

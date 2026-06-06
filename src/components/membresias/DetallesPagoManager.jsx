@@ -1,9 +1,10 @@
 import React from 'react';
 import { Plus, Trash2 } from 'lucide-react';
+import { getTodayLocalDate } from '../../utils/helpers';
 import { Button, Input } from '../ui';
 
 export default function DetallesPagoManager({ detalles = [], onChange }) {
-  const addDetalle = () => onChange([...detalles, { metodo_pago: 'efectivo', monto_parcial: 0, fecha_detalle: new Date().toISOString().split('T')[0] }]);
+  const addDetalle = () => onChange([...detalles, { metodo_pago: 'efectivo', monto_parcial: 0, fecha_detalle: getTodayLocalDate() }]);
   const removeDetalle = (index) => onChange(detalles.filter((_, i) => i !== index));
   const updateDetalle = (index, field, value) => {
     const updated = [...detalles];

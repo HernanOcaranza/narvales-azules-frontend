@@ -5,6 +5,7 @@ import { getAll as getTipoMembresias } from '../../services/tipoMembresiasServic
 import Button from '../../components/UI/Button';
 import Spinner from '../../components/UI/Spinner';
 import { FileText, Download, Search, DollarSign, Clock, List } from 'lucide-react';
+import { getTodayLocalDate, getOneMonthAgoLocalDate } from '../../utils/helpers';
 
 const TABS = [
   { key: 'listado', label: 'Listado General', icon: List },
@@ -19,8 +20,8 @@ function MembresiasReporte() {
   const [estado, setEstado] = useState('');
   const [idTipoMembrecia, setIdTipoMembrecia] = useState('');
   const [idGrupo, setIdGrupo] = useState('');
-  const [fechaDesde, setFechaDesde] = useState('');
-  const [fechaHasta, setFechaHasta] = useState('');
+  const [fechaDesde, setFechaDesde] = useState(getOneMonthAgoLocalDate());
+  const [fechaHasta, setFechaHasta] = useState(getTodayLocalDate());
   const [dias, setDias] = useState(30);
   const [agrupar, setAgrupar] = useState('mensual');
   const [data, setData] = useState(null);

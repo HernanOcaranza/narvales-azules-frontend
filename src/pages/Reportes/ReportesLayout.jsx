@@ -6,6 +6,7 @@ const tabs = [
   { path: ROUTES.REPORTES_ASISTENCIA_ALUMNOS, label: 'Asistencia Alumnos' },
   { path: ROUTES.REPORTES_ASISTENCIA_EMPLEADOS, label: 'Asistencia Empleados' },
   { path: ROUTES.REPORTES_MEMBRESIAS, label: 'Membresías' },
+  { path: ROUTES.REPORTES_FINANCIERO, label: 'Financiero' },
 ];
 
 function ReportesLayout() {

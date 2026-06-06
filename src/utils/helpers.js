@@ -105,6 +105,21 @@ export function getTodayLocalDate() {
   return `${year}-${month}-${day}`;
 }
 
+export function getOneMonthAgoLocalDate() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const day = now.getDate();
+  const prev = new Date(year, month - 1, day);
+  if (prev.getMonth() !== ((month - 1 + 12) % 12)) {
+    prev.setDate(0);
+  }
+  const y = prev.getFullYear();
+  const m = String(prev.getMonth() + 1).padStart(2, '0');
+  const d = String(prev.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
 /**
  * Formatea una fecha a formato YYYY-MM-DD usando la zona horaria local
  * Útil para inputs de tipo date que requieren formato YYYY-MM-DD
