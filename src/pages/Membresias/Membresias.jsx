@@ -128,11 +128,11 @@ function Membresias() {
   const handleDeleteConfirm = async () => {
     try {
       await deleteMembrecia(deleteDialog.membresia.id_membrecia);
-      setSnackbar({ open: true, message: 'Membresía eliminada correctamente', severity: 'success' });
+      setSnackbar({ open: true, message: 'Membresía cancelada correctamente', severity: 'success' });
       setDeleteDialog({ open: false, membresia: null });
       await loadMembresias();
     } catch (error) {
-      setSnackbar({ open: true, message: error.message || 'Error al eliminar la membresía', severity: 'error' });
+      setSnackbar({ open: true, message: error.message || 'Error al cancelar la membresía', severity: 'error' });
     }
   };
 
@@ -234,7 +234,7 @@ function Membresias() {
         open={deleteDialog.open}
         onClose={handleDeleteCancel}
         onConfirm={handleDeleteConfirm}
-        title="la membresía"
+        title="cancelar la membresía"
         itemName={deleteDialog.membresia ? `#${deleteDialog.membresia.id_membrecia}` : ''}
       />
 

@@ -10,14 +10,16 @@ import Pagination from '../../components/Pagination/Pagination';
 import { Button, Modal } from '../../components/ui';
 
 function Pagos() {
-  const { pagos, loading, pagination, fetchPagos, createPago, updatePago, deletePago, fetchPagoById } = usePagos();
+  const { pagos, loading, pagination, fetchPagos, deletePago, fetchPagoById } = usePagos();
 
   const [filters, setFilters] = React.useState({
-    tipo: null,
+    tipo: 'egreso',
     estado: null,
     fechaDesde: null,
     fechaHasta: null,
     observaciones: null,
+    idEmpleado: null,
+    sinEmpleado: false,
   });
 
   const [openModal, setOpenModal] = React.useState(false);
@@ -63,20 +65,10 @@ function Pagos() {
     setEditingItem(null);
   };
 
-  const handleSuccess = async (formData) => {
-    try {
-      if (editingItem) {
-        await updatePago(editingItem.id_pago, formData);
-        setSnackbar({ open: true, message: 'Pago actualizado correctamente', severity: 'success' });
-      } else {
-        await createPago(formData);
-        setSnackbar({ open: true, message: 'Pago creado correctamente', severity: 'success' });
-      }
-      handleCloseModal();
-      await loadPagos();
-    } catch (error) {
-      setSnackbar({ open: true, message: error.message || 'Error al guardar el pago', severity: 'error' });
-    }
+  const handleSuccess = async () => {
+    setSnackbar({ open: true, message: editingItem ? 'Gasto actualizado correctamente' : 'Gasto registrado correctamente', severity: 'success' });
+    handleCloseModal();
+    await loadPagos();
   };
 
   const handleViewDetails = async (pago) => {
@@ -104,7 +96,7 @@ function Pagos() {
   const handleDeleteConfirm = async () => {
     try {
       await deletePago(deleteDialog.pago.id_pago);
-      setSnackbar({ open: true, message: 'Pago eliminado correctamente', severity: 'success' });
+      setSnackbar({ open: true, message: 'Gasto eliminado correctamente', severity: 'success' });
       setDeleteDialog({ open: false, pago: null });
       await loadPagos();
     } catch (error) {
@@ -118,11 +110,13 @@ function Pagos() {
 
   const handleClearFilters = () => {
     setFilters({
-      tipo: null,
+      tipo: 'egreso',
       estado: null,
       fechaDesde: null,
       fechaHasta: null,
       observaciones: null,
+      idEmpleado: null,
+      sinEmpleado: false,
     });
   };
 
@@ -134,7 +128,7 @@ function Pagos() {
     <div>
       <div className="flex justify-end mb-4">
         <Button variant="primary" icon={Plus} onClick={() => handleOpenModal()}>
-          Registrar Pago
+          Registrar Gasto
         </Button>
       </div>
 
@@ -174,11 +168,11 @@ function Pagos() {
         onLimitChange={handleLimitChange}
       />
 
-      {/* Modal para crear/editar pago */}
+      {/* Modal para crear/editar gasto */}
       <Modal
         open={openModal}
         onClose={handleCloseModal}
-        title={editingItem ? 'Editar Pago' : 'Crear Nuevo Pago'}
+        title={editingItem ? 'Editar Gasto' : 'Registrar Gasto'}
         size="sm"
       >
         <PagoForm
@@ -201,7 +195,7 @@ function Pagos() {
         open={deleteDialog.open}
         onClose={handleDeleteCancel}
         onConfirm={handleDeleteConfirm}
-        title="el pago"
+        title="el gasto"
         itemName={`#${deleteDialog.pago?.id_pago || ''}`}
       />
 

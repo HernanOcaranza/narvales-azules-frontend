@@ -8,12 +8,18 @@ import api from './api';
 const ENDPOINT = '/empleados';
 
 /**
- * Obtiene todos los empleados
+ * Obtiene todos los empleados con filtros opcionales
+ * @param {object} options - Filtros (tipo, nombre, estado)
  * @returns {Promise} - Lista de empleados
  */
-export const getAll = async () => {
-  const response = await api.get(ENDPOINT);
-  // Si la respuesta tiene un campo 'data', extraerlo, sino devolver la respuesta completa
+export const getAll = async (options = {}) => {
+  const { tipo, nombre, estado } = options;
+  const params = new URLSearchParams();
+  if (tipo) params.append('tipo', tipo);
+  if (nombre) params.append('nombre', nombre);
+  if (estado !== undefined) params.append('estado', estado);
+  const query = params.toString();
+  const response = await api.get(query ? `${ENDPOINT}?${query}` : ENDPOINT);
   return response?.data || response;
 };
 

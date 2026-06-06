@@ -149,7 +149,7 @@ export function filtrarAlumnosPorEstado(alumnos, estadosFiltro) {
 
   return alumnos.filter(alumno => {
     const estado = getEstadoMembresia(alumno);
-    return estadosArray.includes(estado.tipo);
+    return estadosArray.some(f => f === 'activa' ? estado.tipo.startsWith('activa_') : estado.tipo === f);
   });
 }
 

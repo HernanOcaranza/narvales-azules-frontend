@@ -37,7 +37,11 @@ export const getAll = async (options = {}) => {
  */
 export const getById = async (id) => {
   const response = await api.get(`${ENDPOINT}/${id}`);
-  // Si la respuesta tiene un campo 'data', extraerlo, sino devolver la respuesta completa
+  return response?.data || response;
+};
+
+export const getCompletoById = async (id) => {
+  const response = await api.get(`${ENDPOINT}/${id}/completo`);
   return response?.data || response;
 };
 
@@ -91,6 +95,7 @@ export const deleteById = async (id) => {
 const grupoService = {
   getAll,
   getById,
+  getCompletoById,
   getByDisciplina,
   getByCategoria,
   create,

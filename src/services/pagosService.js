@@ -37,6 +37,12 @@ export const getAll = async (options = {}) => {
   if (filters.observaciones) {
     params.append('observaciones', filters.observaciones);
   }
+  if (filters.idEmpleado) {
+    params.append('id_empleado', filters.idEmpleado);
+  }
+  if (filters.sinEmpleado) {
+    params.append('sinEmpleado', 'true');
+  }
   
   const response = await api.get(`${ENDPOINT}?${params.toString()}`);
   return response?.data || response;
@@ -59,6 +65,10 @@ export const getById = async (id) => {
  */
 export const create = async (data) => {
   return await api.post(ENDPOINT, data);
+};
+
+export const createEgreso = async (data) => {
+  return await api.post(`${ENDPOINT}/egreso`, data);
 };
 
 /**
@@ -85,6 +95,7 @@ const pagosService = {
   getAll,
   getById,
   create,
+  createEgreso,
   update,
   deleteById,
 };

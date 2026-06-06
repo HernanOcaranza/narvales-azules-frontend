@@ -25,6 +25,7 @@ export const getAll = async (options = {}) => {
   if (filters.idCondicion) params.idCondicion = filters.idCondicion;
   if (filters.estado) params.estado = filters.estado;
   if (filters.certificado) params.certificado = filters.certificado;
+  if (filters.idGrupo) params.idGrupo = filters.idGrupo;
   
   const response = await api.get(ENDPOINT, { params });
   const result = response?.data || response;

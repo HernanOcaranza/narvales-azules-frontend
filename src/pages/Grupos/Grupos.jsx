@@ -4,6 +4,7 @@ import * as grupoService from '../../services/grupoService';
 import GrupoForm from '../../components/Forms/GrupoForm';
 import ConfirmDeleteDialog from '../../components/Dialogs/ConfirmDeleteDialog';
 import GruposFilters from '../../components/grupos/GruposFilters';
+import GrupoDetailsModal from '../../components/grupos/GrupoDetailsModal';
 import Pagination from '../../components/Pagination/Pagination';
 import { obtenerNombreDia, DIAS_SEMANA } from '../../utils/constants';
 import { useAuth } from '../../hooks/useAuth';
@@ -19,10 +20,11 @@ function Grupos() {
   const [openModal, setOpenModal] = React.useState(false);
   const [editingItem, setEditingItem] = React.useState(null);
   const [deleteDialog, setDeleteDialog] = React.useState({ open: false, item: null });
+  const [detailDialog, setDetailDialog] = React.useState({ open: false, grupoId: null });
   const [filters, setFilters] = React.useState({
     idDisciplina: '',
     idCategoria: '',
-    estado: '',
+    estado: 'activo',
     nombre: '',
   });
   const [pagination, setPagination] = React.useState({ page: 1, limit: 10, total: 0, totalPages: 0 });
@@ -107,12 +109,20 @@ function Grupos() {
     }
   };
 
+  const handleViewDetails = (grupo) => {
+    setDetailDialog({ open: true, grupoId: grupo.id_grupo });
+  };
+
+  const handleCloseDetails = () => {
+    setDetailDialog({ open: false, grupoId: null });
+  };
+
   const handleFilterChange = (newFilters) => {
     setFilters(newFilters);
   };
 
   const handleClearFilters = () => {
-    setFilters({ idDisciplina: '', idCategoria: '', estado: '', nombre: '' });
+    setFilters({ idDisciplina: '', idCategoria: '', estado: 'activo', nombre: '' });
   };
 
   const getEstadoBadge = (estado) => {
@@ -168,10 +178,12 @@ function Grupos() {
             grupos.map((grupo) => {
               const badge = getEstadoBadge(grupo.estado);
               return (
-                <Card key={grupo.id_grupo} hover>
+                  <Card key={grupo.id_grupo} hover>
                   <div className="space-y-2">
                     <div className="flex justify-between items-start">
-                      <h3 className="font-semibold text-text-primary">{grupo.nombre}</h3>
+                      <button onClick={() => handleViewDetails(grupo)} className="text-left font-semibold text-text-primary hover:text-primary-main transition-colors">
+                        {grupo.nombre}
+                      </button>
                       <Chip label={badge.label} variant={badge.variant} size="sm" />
                     </div>
                     <p className="text-sm text-text-secondary">
@@ -219,7 +231,11 @@ function Grupos() {
                 const badge = getEstadoBadge(grupo.estado);
                 return (
                   <TableRow key={grupo.id_grupo} hover>
-                    <TableCell className="font-medium">{grupo.nombre}</TableCell>
+                    <TableCell className="font-medium">
+                      <button onClick={() => handleViewDetails(grupo)} className="text-left hover:text-primary-main transition-colors">
+                        {grupo.nombre}
+                      </button>
+                    </TableCell>
                     <TableCell>{grupo.disciplina?.disciplina || 'N/A'}</TableCell>
                     <TableCell>{grupo.categoria?.categoria || 'N/A'}</TableCell>
                     <TableCell>
@@ -267,6 +283,13 @@ function Grupos() {
           initialData={editingItem}
         />
       </Modal>
+
+      {/* Detail Modal */}
+      <GrupoDetailsModal
+        open={detailDialog.open}
+        onClose={handleCloseDetails}
+        grupoId={detailDialog.grupoId}
+      />
 
       {/* Delete Dialog */}
       <ConfirmDeleteDialog

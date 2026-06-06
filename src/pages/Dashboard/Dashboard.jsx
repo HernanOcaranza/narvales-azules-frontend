@@ -55,21 +55,37 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
+  const hoy = new Date();
+  const mesAnterior = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1);
+  const [fechaDesde, setFechaDesde] = useState(mesAnterior.toISOString().split('T')[0]);
+  const [fechaHasta, setFechaHasta] = useState(hoy.toISOString().split('T')[0]);
 
   useEffect(() => {
-    loadData();
+    loadData(fechaDesde, fechaHasta);
   }, []);
 
-  const loadData = async () => {
+  const loadData = async (desde, hasta) => {
     try {
       setLoading(true);
-      const result = await dashboardService.getStats();
+      const result = await dashboardService.getStats({ fechaDesde: desde, fechaHasta: hasta });
       setData(result);
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleFilter = () => {
+    loadData(fechaDesde || undefined, fechaHasta || undefined);
+  };
+
+  const handleClearFilter = () => {
+    const hoy = new Date();
+    const mesAnt = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1);
+    setFechaDesde(mesAnt.toISOString().split('T')[0]);
+    setFechaHasta(hoy.toISOString().split('T')[0]);
+    loadData(mesAnt.toISOString().split('T')[0], hoy.toISOString().split('T')[0]);
   };
 
   if (loading) {
@@ -96,6 +112,42 @@ function Dashboard() {
 
   return (
     <div className="p-3">
+      {/* Date Filter */}
+      <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-md p-3 mb-4 border border-gray-200 flex flex-wrap items-end gap-3">
+        <div>
+          <label className="block text-xs font-medium text-text-secondary mb-1">Desde</label>
+          <input
+            type="date"
+            value={fechaDesde}
+            onChange={(e) => setFechaDesde(e.target.value)}
+            className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 focus:border-primary-main focus:ring-2 focus:ring-primary-light/30 outline-none"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-text-secondary mb-1">Hasta</label>
+          <input
+            type="date"
+            value={fechaHasta}
+            onChange={(e) => setFechaHasta(e.target.value)}
+            className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 focus:border-primary-main focus:ring-2 focus:ring-primary-light/30 outline-none"
+          />
+        </div>
+        <button
+          onClick={handleFilter}
+          className="px-4 py-1.5 text-sm font-medium bg-primary-main text-white rounded-lg hover:bg-primary-dark transition-colors"
+        >
+          Filtrar
+        </button>
+        {(fechaDesde || fechaHasta) && (
+          <button
+            onClick={handleClearFilter}
+            className="px-4 py-1.5 text-sm font-medium text-text-secondary bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+          >
+            Limpiar
+          </button>
+        )}
+      </div>
+
       {/* Row 1: KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         {/* Alumnos Activos */}

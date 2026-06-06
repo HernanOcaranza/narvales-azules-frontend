@@ -138,6 +138,20 @@ function Clases() {
     setDetailDialog({ open: false, clase: null });
   };
 
+  const handleGenerarClases = async () => {
+    setGenerating(true);
+    try {
+      const result = await claseService.generarTodas();
+      const msg = result?.mensaje || result?.data?.mensaje || 'Clases generadas correctamente';
+      setSnackbar({ open: true, message: msg, severity: 'success' });
+      loadClasesWithParams();
+    } catch (error) {
+      setSnackbar({ open: true, message: error.message || 'Error al generar clases', severity: 'error' });
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   const getEstadoBadge = (estado) => {
     const estados = {
       pendiente: { variant: 'warning', label: 'Pendiente' },
@@ -159,6 +173,12 @@ function Clases() {
 
   return (
     <div>
+      <div className="flex justify-end mb-3">
+        <Button variant="primary" icon={Play} onClick={handleGenerarClases} loading={generating}>
+          {generating ? 'Generando...' : 'Generar Clases del Mes'}
+        </Button>
+      </div>
+
       {/* Filters */}
       <div className="bg-white/95 rounded-lg mb-3 overflow-hidden border border-gray-200">
         <button 
@@ -346,7 +366,7 @@ function Clases() {
       >
         {detailDialog.clase && (
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <p className="text-sm text-text-secondary">Fecha</p>
                 <p className="font-medium">{formatDate(detailDialog.clase.fecha_clase)}</p>

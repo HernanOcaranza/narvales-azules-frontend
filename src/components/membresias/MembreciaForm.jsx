@@ -244,17 +244,19 @@ export default function MembreciaForm({ onSuccess, onCancel, initialData = null 
         required
       />
 
-      <Select
-        label="Estado"
-        value={formData.estado}
-        onChange={(e) => handleChange('estado', e.target.value)}
-      >
-        {estados.map(estado => (
-          <option key={estado} value={estado}>
-            {estado.charAt(0).toUpperCase() + estado.slice(1)}
-          </option>
-        ))}
-      </Select>
+      {initialData && (
+        <Select
+          label="Estado"
+          value={formData.estado}
+          onChange={(e) => handleChange('estado', e.target.value)}
+        >
+          {estados.map(estado => (
+            <option key={estado} value={estado}>
+              {estado.charAt(0).toUpperCase() + estado.slice(1)}
+            </option>
+          ))}
+        </Select>
+      )}
 
       <div className="border-t border-gray-200 pt-4">
         <p className="font-medium text-text-primary mb-3">Información de Pago (Opcional)</p>

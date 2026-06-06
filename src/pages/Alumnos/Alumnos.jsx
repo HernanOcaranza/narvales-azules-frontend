@@ -24,7 +24,7 @@ import EstadoMembresiaBadge from '../../components/EstadoMembresiaBadge/EstadoMe
 import FiltrosAlumnos from '../../components/FiltrosAlumnos/FiltrosAlumnos';
 import Pagination from '../../components/Pagination/Pagination';
 import { formatDate, formatCurrency } from '../../utils/helpers';
-import { filtrarAlumnosPorEstado, ordenarAlumnosPorEstado } from '../../utils/membresiaHelpers';
+import { filtrarAlumnosPorEstado } from '../../utils/membresiaHelpers';
 import { useAuth } from '../../hooks/useAuth';
 import { Button, Input, Card, Chip, Spinner, Modal, Table, TableHead, TableBody, TableRow, TableHeadCell, TableCell } from '../../components/ui';
 
@@ -46,12 +46,12 @@ function Alumnos() {
   const [alumnoCompleto, setAlumnoCompleto] = React.useState(null);
   const [errorAlumnoCompleto, setErrorAlumnoCompleto] = React.useState(null);
   const [estadosFiltro, setEstadosFiltro] = React.useState([]);
-  const [ordenEstado, setOrdenEstado] = React.useState('asc');
   const [filtrosAdicionales, setFiltrosAdicionales] = React.useState({
     tutor: null,
     idCategoria: null,
     idCondicion: null,
-    estado: '',
+    idGrupo: null,
+    estado: '1',
     certificado: '',
   });
   const [pagination, setPagination] = React.useState({ page: 1, limit: 10, total: 0, totalPages: 0 });
@@ -75,6 +75,7 @@ function Alumnos() {
       if (filtrosAdicionales.tutor?.id_tutor) filtrosBackend.idTutor = filtrosAdicionales.tutor.id_tutor;
       if (filtrosAdicionales.idCategoria) filtrosBackend.idCategoria = parseInt(filtrosAdicionales.idCategoria);
       if (filtrosAdicionales.idCondicion) filtrosBackend.idCondicion = parseInt(filtrosAdicionales.idCondicion);
+      if (filtrosAdicionales.idGrupo) filtrosBackend.idGrupo = parseInt(filtrosAdicionales.idGrupo);
       if (filtrosAdicionales.estado) filtrosBackend.estado = filtrosAdicionales.estado;
       if (filtrosAdicionales.certificado) filtrosBackend.certificado = filtrosAdicionales.certificado;
 
@@ -199,11 +200,8 @@ function Alumnos() {
     if (estadosFiltro.length > 0) {
       result = filtrarAlumnosPorEstado(result, estadosFiltro);
     }
-    if (ordenEstado) {
-      result = ordenarAlumnosPorEstado(result, ordenEstado);
-    }
     return result;
-  }, [alumnos, searchText, estadosFiltro, ordenEstado]);
+  }, [alumnos, searchText, estadosFiltro]);
 
   return (
     <div>
@@ -240,8 +238,6 @@ function Alumnos() {
                 alumnos={alumnos}
                 estadosSeleccionados={estadosFiltro}
                 onEstadosChange={setEstadosFiltro}
-                orden={ordenEstado}
-                onOrdenChange={setOrdenEstado}
                 filtrosAdicionales={filtrosAdicionales}
                 onFiltrosChange={setFiltrosAdicionales}
               />

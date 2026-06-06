@@ -27,11 +27,12 @@ export default function PagoDetailsModal({ open, onClose, pago, onRefresh }) {
   if (!open || !pago) return null;
 
   return (
-    <Modal open={open} onClose={onClose} title={`Pago #${pago.id_pago}`} size="lg">
+    <Modal open={open} onClose={onClose} title={`Gasto #${pago.id_pago}`} size="lg">
       <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div><p className="text-sm text-text-secondary">Alumno</p><p className="font-medium">{pago.alumno?.nombre} {pago.alumno?.apellido}</p></div>
-          <div><p className="text-sm text-text-secondary">Monto Total</p><p className="font-bold text-primary-main text-lg">{formatCurrency(pago.monto_total)}</p></div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div><p className="text-sm text-text-secondary">Empleado</p><p className="font-medium">{pago.empleado?.nombre ? `${pago.empleado.nombre} ${pago.empleado.apellido}` : '-'}</p></div>
+          <div><p className="text-sm text-text-secondary">Descripción</p><p className="font-medium">{pago.observaciones || '-'}</p></div>
+          <div><p className="text-sm text-text-secondary">Monto Total</p><p className="font-bold text-primary-main text-lg">{formatCurrency(pago.detalles?.[0]?.monto_parcial)}</p></div>
           <div><p className="text-sm text-text-secondary">Fecha</p><p className="font-medium">{formatDate(pago.fecha_pago)}</p></div>
           <div><p className="text-sm text-text-secondary">Estado</p><span className={`px-2 py-1 rounded text-xs font-medium ${pago.estado === 'completado' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}`}>{pago.estado}</span></div>
         </div>

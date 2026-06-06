@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, Edit, Trash2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Filter, ChevronDown } from 'lucide-react';
 import * as empleadoService from '../../services/empleadoService';
 import EmpleadoForm from '../../components/Forms/EmpleadoForm';
 import ConfirmDeleteDialog from '../../components/Dialogs/ConfirmDeleteDialog';
@@ -13,6 +13,8 @@ function Empleados() {
   const [editingItem, setEditingItem] = React.useState(null);
   const [deleteDialog, setDeleteDialog] = React.useState({ open: false, item: null });
   const [isMobile, setIsMobile] = React.useState(false);
+  const [filters, setFilters] = React.useState({ tipo: '', nombre: '', estado: '1' });
+  const [filtersExpanded, setFiltersExpanded] = React.useState(false);
 
   React.useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 640);
@@ -23,12 +25,12 @@ function Empleados() {
 
   React.useEffect(() => {
     loadEmpleados();
-  }, []);
+  }, [filters]);
 
   const loadEmpleados = async () => {
     setLoading(true);
     try {
-      const data = await empleadoService.getAll({ limit: 100 });
+      const data = await empleadoService.getAll(filters);
       const empleadosData = data?.data?.data || data?.data || data || [];
       setEmpleados(Array.isArray(empleadosData) ? empleadosData : []);
     } catch (error) {
@@ -90,6 +92,51 @@ function Empleados() {
         <Button variant="primary" icon={Plus} onClick={() => handleOpenModal()}>
           Nuevo Empleado
         </Button>
+      </div>
+
+      {/* Filters */}
+      <div className="bg-white/95 rounded-lg mb-3 overflow-hidden border border-gray-200">
+        <button 
+          className="w-full px-4 py-2 flex items-center gap-2 text-text-primary font-medium hover:bg-gray-50 transition-colors"
+          onClick={() => setFiltersExpanded(!filtersExpanded)}
+        >
+          <Filter className="w-4 h-4 text-primary-main" />
+          Filtros
+          <ChevronDown className={`ml-auto w-4 h-4 transition-transform ${filtersExpanded ? 'rotate-180' : ''}`} />
+        </button>
+        {filtersExpanded && (
+          <div className="p-3 border-t border-gray-200">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <select
+                className="px-3 py-2 rounded-lg border border-gray-300 focus:border-primary-main focus:ring-2 focus:ring-primary-light/30 outline-none"
+                value={filters.tipo}
+                onChange={(e) => setFilters(prev => ({ ...prev, tipo: e.target.value }))}
+              >
+                <option value="">Tipo - Todos</option>
+                <option value="profesor">Profesor</option>
+                <option value="guardavidas">Guardavidas</option>
+                <option value="recepcionista">Recepcionista</option>
+                <option value="admin">Administrador</option>
+              </select>
+              <select
+                className="px-3 py-2 rounded-lg border border-gray-300 focus:border-primary-main focus:ring-2 focus:ring-primary-light/30 outline-none"
+                value={filters.estado}
+                onChange={(e) => setFilters(prev => ({ ...prev, estado: e.target.value }))}
+              >
+                <option value="1">Activo</option>
+                <option value="0">Inactivo</option>
+                <option value="">Estado - Todos</option>
+              </select>
+              <input
+                type="text"
+                className="px-3 py-2 rounded-lg border border-gray-300 focus:border-primary-main focus:ring-2 focus:ring-primary-light/30 outline-none"
+                placeholder="Buscar por nombre..."
+                value={filters.nombre}
+                onChange={(e) => setFilters(prev => ({ ...prev, nombre: e.target.value }))}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {loading ? (
