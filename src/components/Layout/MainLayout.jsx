@@ -57,7 +57,7 @@ const allMenuItems = [
     key: ROUTES.ALUMNOS,
     icon: Users,
     label: 'Alumnos',
-    roles: ['admin', 'recepcionista', 'profesor'],
+    roles: ['admin', 'recepcionista', 'profesor', 'guardavidas'],
   },
   {
     key: ROUTES.MEMBRESIAS,
@@ -75,13 +75,13 @@ const allMenuItems = [
     key: ROUTES.CLASES,
     icon: BookOpen,
     label: 'Clases',
-    roles: ['admin', 'recepcionista', 'profesor'],
+    roles: ['admin', 'recepcionista', 'profesor', 'guardavidas'],
   },
   {
     key: ROUTES.GRUPOS,
     icon: Group,
     label: 'Grupos',
-    roles: ['admin', 'recepcionista', 'profesor'],
+    roles: ['admin', 'recepcionista', 'profesor', 'guardavidas'],
   },
   {
     key: ROUTES.EMPLEADOS,
@@ -93,7 +93,7 @@ const allMenuItems = [
     key: ROUTES.REPORTES,
     icon: FileText,
     label: 'Reportes',
-    roles: ['admin', 'recepcionista', 'profesor', 'guardavidas'],
+    roles: ['admin'],
   },
 ];
 
