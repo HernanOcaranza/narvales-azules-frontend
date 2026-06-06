@@ -588,6 +588,42 @@ function Dashboard() {
               <span className="font-medium text-orange-600">{s.pagosParciales}</span>
             </div>
           </div>
+
+          {/* Últimos Egresos */}
+          {data?.egresosRecientes?.length > 0 && (
+            <div className="mt-4 pt-3 border-t border-gray-200">
+              <h4 className="text-sm font-semibold text-text-primary mb-2 flex items-center gap-1.5">
+                <DollarSign className="w-4 h-4 text-red-500" />
+                Últimos Egresos
+              </h4>
+              <div className="divide-y divide-gray-100">
+                {data.egresosRecientes.slice(0, 5).map((egreso) => {
+                  const monto = egreso.detalles?.[0]?.monto_parcial || 0;
+                  const empleado = egreso.empleado
+                    ? `${egreso.empleado.nombre} ${egreso.empleado.apellido}`
+                    : null;
+                  return (
+                    <div key={egreso.id_pago} className="py-1.5">
+                      <div className="flex justify-between items-start">
+                        <div className="min-w-0 flex-1 mr-2">
+                          <div className="text-xs font-medium text-text-primary truncate">
+                            {empleado || egreso.observaciones || 'Gasto general'}
+                          </div>
+                          <div className="text-xs text-text-secondary">
+                            {formatDate(egreso.fecha_pago)}
+                            {empleado && egreso.observaciones ? ` · ${egreso.observaciones}` : ''}
+                          </div>
+                        </div>
+                        <span className="text-xs font-semibold text-red-600 whitespace-nowrap">
+                          -{formatCurrency(monto)}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

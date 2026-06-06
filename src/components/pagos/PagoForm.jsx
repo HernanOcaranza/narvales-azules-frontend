@@ -6,7 +6,7 @@ import { Button, Input, Select } from '../ui';
 
 export default function PagoForm({ onSuccess, onCancel, initialData = null }) {
   const today = new Date().toISOString().split('T')[0];
-  const [formData, setFormData] = React.useState(initialData || { id_empleado: '', monto: '', fecha_pago: today, metodo_pago: 'efectivo', estado: 'completado', observaciones: '' });
+  const [formData, setFormData] = React.useState(initialData || { id_empleado: '', monto: '', fecha_pago: today, metodo_pago: 'efectivo', estado: 'completo', observaciones: '' });
   const [empleados, setEmpleados] = React.useState([]);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState('');
@@ -31,7 +31,7 @@ export default function PagoForm({ onSuccess, onCancel, initialData = null }) {
           id_empleado: formData.id_empleado ? parseInt(formData.id_empleado) : null,
           observaciones: formData.observaciones,
           fecha_pago: formData.fecha_pago,
-          estado: 'completado',
+          estado: 'completo',
         };
         await pagosService.update(initialData.id_pago, payload);
       } else {
@@ -39,7 +39,7 @@ export default function PagoForm({ onSuccess, onCancel, initialData = null }) {
           id_empleado: formData.id_empleado ? parseInt(formData.id_empleado) : null,
           observaciones: formData.observaciones,
           fecha_pago: formData.fecha_pago,
-          estado: 'completado',
+          estado: 'completo',
           monto: parseFloat(formData.monto),
           metodo_pago: formData.metodo_pago,
         });
